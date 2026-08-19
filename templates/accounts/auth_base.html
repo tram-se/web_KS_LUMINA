@@ -1,0 +1,395 @@
+{% load static %}
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Lumina Hotel{% endblock %}</title>
+    <style>
+      :root {
+        --navy: #101d2a;
+        --navy-2: #1a3140;
+        --gold: #d6a95f;
+        --gold-light: #f2d79b;
+        --cream: #fbfaf5;
+        --ink: #14232b;
+        --muted: #74828a;
+        --line: #dfe5e2;
+        --danger: #a84b4b;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--navy);
+        color: var(--ink);
+        font-family: "Trebuchet MS", Arial, sans-serif;
+      }
+      .auth-page {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: minmax(320px, 0.86fr) minmax(480px, 1.14fr);
+        overflow: hidden;
+      }
+      .auth-visual {
+        position: relative;
+        padding: 42px 6vw;
+        background: linear-gradient(
+          145deg,
+          #112330 0%,
+          #1d3e4b 55%,
+          #173039 100%
+        );
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        isolation: isolate;
+      }
+      .auth-visual:before,
+      .auth-visual:after {
+        content: "";
+        position: absolute;
+        border: 1px solid rgba(242, 215, 155, 0.26);
+        border-radius: 50%;
+        z-index: -1;
+      }
+      .auth-visual:before {
+        width: 460px;
+        height: 460px;
+        right: -230px;
+        top: 17%;
+        box-shadow:
+        0 0 0 36px rgba(214, 169, 95, 0.04),
+        0 0 0 72px rgba(214, 169, 95, 0.03);
+      }
+      .auth-visual:after {
+        width: 190px;
+        height: 190px;
+        left: -90px;
+        bottom: 12%;
+        background: rgba(214, 169, 95, 0.08);
+      }
+      .auth-brand {
+        display: flex;
+        align-items: center;
+        gap: 13px;
+        color: #fff;
+        text-decoration: none;
+        font:
+        700 18px Georgia,
+        serif;
+        letter-spacing: 3px;
+      }
+      .brand-seal {
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border: 1px solid var(--gold-light);
+        border-radius: 50%;
+        color: var(--gold-light);
+        font: italic 27px Georgia;
+      }
+      .auth-brand small {
+        display: block;
+        color: #afc2c5;
+        font:
+        10px Arial,
+        sans-serif;
+        letter-spacing: 4px;
+        margin-top: 4px;
+      }
+      .visual-copy {
+        max-width: 430px;
+      }
+      .visual-kicker {
+        color: var(--gold-light);
+        letter-spacing: 3px;
+        font-size: 11px;
+        font-weight: bold;
+      }
+      .visual-copy h1 {
+        font:
+        normal clamp(38px, 4.8vw, 70px)/0.98 Georgia,
+        serif;
+        margin: 18px 0;
+      }
+      .visual-copy h1 em {
+        color: var(--gold-light);
+        font-style: italic;
+      }
+      .visual-copy p {
+        color: #c5d4d3;
+        line-height: 1.7;
+        max-width: 360px;
+        font-size: 14px;
+      }
+      .visual-footer {
+        display: flex;
+        gap: 26px;
+        color: #a9bfbe;
+        font-size: 11px;
+        letter-spacing: 0.6px;
+      }
+      .visual-footer b {
+        display: block;
+        color: #f4e9d0;
+        font:
+        normal 21px Georgia,
+        serif;
+        margin-bottom: 4px;
+      }
+      .auth-form-side {
+        background: var(--cream);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 42px 7vw;
+      }
+      .auth-card {
+        width: min(100%, 440px);
+      }
+      .form-kicker {
+        font-size: 10px;
+        letter-spacing: 2px;
+        color: var(--gold);
+        font-weight: bold;
+        margin: 0 0 13px;
+      }
+      .auth-card h2 {
+        font:
+        normal 39px Georgia,
+        serif;
+        margin: 0 0 9px;
+        color: var(--ink);
+      }
+      .auth-subtitle {
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.6;
+        margin: 0 0 28px;
+      }
+      .auth-form p {
+        margin: 0 0 17px;
+      }
+      .auth-form label {
+        display: block;
+        color: #53636a;
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 0.4px;
+        margin-bottom: 7px;
+      }
+      .auth-form input {
+        width: 100%;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        background: #fff;
+        padding: 13px 14px;
+        color: var(--ink);
+        font:
+        14px Arial,
+        sans-serif;
+        outline: none;
+        transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+      }
+      .auth-form input:focus {
+        border-color: var(--gold);
+        box-shadow: 0 0 0 3px rgba(214, 169, 95, 0.16);
+      }
+      .auth-form .helptext {
+        display: block;
+        color: #8b9699;
+        font-size: 10px;
+        margin-top: 6px;
+        line-height: 1.5;
+      }
+      .auth-form .errorlist,
+      .auth-errors {
+        color: var(--danger);
+        font-size: 11px;
+        line-height: 1.5;
+        padding: 0;
+        margin: 0 0 15px;
+        list-style: none;
+      }
+      .auth-submit {
+        width: 100%;
+        border: 0;
+        border-radius: 3px;
+        background: var(--navy);
+        color: #fff;
+        padding: 15px 18px;
+        font-weight: bold;
+        font-size: 12px;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition:
+        background 0.2s,
+        transform 0.2s;
+      }
+      .auth-submit:hover {
+        background: #274d5d;
+        transform: translateY(-1px);
+      }
+      .auth-switch {
+        text-align: center;
+        color: var(--muted);
+        font-size: 12px;
+        margin: 22px 0 0;
+      }
+      .auth-switch a,
+      .auth-link {
+        color: #a8792d;
+        font-weight: bold;
+        text-decoration: none;
+      }
+      .auth-switch a:hover,
+      .auth-link:hover {
+        text-decoration: underline;
+      }
+      .auth-message {
+        padding: 11px 13px;
+        background: #edf6ef;
+        border-left: 3px solid #5d9d70;
+        color: #39744d;
+        font-size: 12px;
+        margin-bottom: 18px;
+      }
+      .auth-back {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        text-decoration: none;
+        font-size: 12px;
+        margin-bottom: 28px;
+      }
+      .auth-back:hover {
+        color: var(--ink);
+      }
+      .logout-mark {
+        width: 76px;
+        height: 76px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: #f5e9ce;
+        color: #b58130;
+        font: 36px Georgia;
+        margin-bottom: 25px;
+      }
+      .logout-card {
+        text-align: center;
+      }
+      .logout-card .auth-subtitle {
+        max-width: 310px;
+        margin: 0 auto 28px;
+      }
+      .logout-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .logout-actions > * {
+        flex: 1;
+      }
+      .auth-secondary {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid var(--line);
+        border-radius: 3px;
+        color: var(--ink);
+        text-decoration: none;
+        padding: 14px 15px;
+        font-size: 12px;
+        font-weight: bold;
+        background: #fff;
+      }
+      .auth-secondary:hover {
+        border-color: var(--gold);
+      }
+      @media (max-width: 820px) {
+        .auth-page {
+          grid-template-columns: 1fr;
+        }
+        .auth-visual {
+          min-height: 330px;
+          padding: 28px 8vw;
+        }
+        .visual-copy {
+          margin-top: 48px;
+        }
+        .visual-copy h1 {
+          font-size: 47px;
+        }
+        .visual-footer {
+          display: none;
+        }
+        .auth-form-side {
+          padding: 42px 8vw;
+          min-height: calc(100vh - 330px);
+        }
+      }
+      @media (max-width: 480px) {
+        .auth-visual {
+          min-height: 290px;
+        }
+        .visual-copy {
+          margin-top: 35px;
+        }
+        .visual-copy h1 {
+          font-size: 39px;
+        }
+        .auth-form-side {
+          padding: 34px 22px;
+        }
+        .auth-card h2 {
+          font-size: 33px;
+        }
+        .logout-actions {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="auth-page">
+      <section class="auth-visual">
+        {% if login_area == "Staff" %}
+          <a class="auth-brand" href="{% url 'staff-login' %}">
+        {% else %}
+          <a class="auth-brand" href="{% url 'login' %}">
+        {% endif %}
+          <span class="brand-seal">L</span>
+          <span>LUMINA<small>HOTEL & RESORT</small></span>
+        </a>
+          <div class="visual-copy">
+            <span class="visual-kicker">A STAY WORTH REMEMBERING</span>
+            <h1>Đăng nhập vào<br /><em>trải nghiệm</em> Lumina.</h1>
+            <p>
+              Một không gian tinh tế cho những ngày nghỉ đáng nhớ, được chăm sóc
+              bằng sự tận tâm.
+            </p>
+          </div>
+          <div class="visual-footer">
+            <span><b>24/7</b>Hỗ trợ tận tâm</span
+              ><span><b>5★</b>Chuẩn dịch vụ</span
+                ><span><b>∞</b>Khoảnh khắc đẹp</span>
+              </div>
+            </section>
+            <main class="auth-form-side">
+              <div class="auth-card">
+                {% for message in messages %}
+                  <div class="auth-message">✓ {{ message }}</div>
+                {% endfor %}{% block auth_content %}{% endblock %}
+              </div>
+            </main>
+          </div>
+        </body>
+        </html>

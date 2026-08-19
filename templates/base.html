@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% block title %}Lumina Hotel{% endblock %}</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 24px;
+        color: #17202a;
+      }
+      nav {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #ddd;
+      }
+      nav form {
+        margin-left: auto;
+      }
+      a {
+        color: #176b87;
+      }
+      .panel {
+        padding: 28px 0;
+      }
+      label {
+        display: block;
+        margin-top: 12px;
+        font-weight: 600;
+      }
+      input {
+        display: block;
+        padding: 9px;
+        width: min(100%, 360px);
+        margin-top: 5px;
+      }
+      button {
+        margin-top: 18px;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+      .message {
+        padding: 10px;
+        background: #eef8f4;
+      }
+      .errorlist {
+        color: #a33;
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <nav>
+      <a href="{% url 'dashboard' %}">Lumina Hotel</a>
+    </nav>
+    {% for message in messages %}
+      <p class="message">{{ message }}</p>
+    {% endfor %}
+    <main class="panel">{% block content %}{% endblock %}</main>
+  </body>
+</html>

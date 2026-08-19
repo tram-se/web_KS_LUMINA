@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{% block admin_title %}Quản trị hệ thống{% endblock %} | Lumina{% endblock %}
+{% block content %}
+<style>
+:root {
+  --admin-ink: #182a2e;
+  --admin-muted: #748386;
+  --admin-line: #e1e8e5;
+  --admin-paper: #f5f8f6;
+  --admin-teal: #126d68;
+  --admin-navy: #142f38;
+  --admin-gold: #d4a552;
+}
+body { max-width: none; margin: 0; padding: 0; background: var(--admin-paper); color: var(--admin-ink); font-family: "Segoe UI", Arial, sans-serif; }
+body > nav, body > p { display: none; }
+.admin-shell { display: flex; min-height: 100vh; }
+.admin-sidebar { width: 255px; flex-shrink: 0; padding: 28px 18px; background: var(--admin-navy); color: #d7e4e0; display: flex; flex-direction: column; }
+.admin-brand { display: flex; gap: 11px; align-items: center; color: #fff; text-decoration: none; font: 700 18px Georgia, serif; letter-spacing: 2px; }
+.admin-seal { display: grid; place-items: center; width: 38px; height: 38px; border: 1px solid var(--admin-gold); border-radius: 50%; color: var(--admin-gold); font: italic 24px Georgia; }
+.admin-brand small { display: block; margin-top: 4px; color: #a9c0bd; font: 9px Arial, sans-serif; letter-spacing: 3px; }
+.admin-label { margin: 48px 12px 12px; color: #72918e; font-size: 10px; font-weight: bold; letter-spacing: 1.8px; }
+.admin-link { display: flex; gap: 11px; align-items: center; padding: 12px; margin: 2px 0; border-radius: 4px; color: #abc0bd; text-decoration: none; font-size: 13px; }
+.admin-link:hover, .admin-link.active { background: #24505a; color: #fff; }
+.admin-link span { width: 19px; text-align: center; color: var(--admin-gold); font-size: 16px; }
+.admin-sidebar-bottom { margin-top: auto; padding: 20px 6px 0; border-top: 1px solid #31535b; }
+.admin-user { display: flex; gap: 10px; align-items: center; font-size: 12px; }
+.admin-avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--admin-gold); color: var(--admin-navy); font-weight: bold; }
+.admin-user b, .admin-user small { display: block; }.admin-user small { margin-top: 3px; color: #9bb4b1; }
+.admin-logout { display: inline-block; margin-top: 18px; color: #abc0bd; font-size: 12px; text-decoration: none; }
+.admin-content { flex: 1; max-width: 1500px; padding: 38px 5%; }.admin-topbar { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 31px; }
+.admin-kicker { margin: 0 0 10px; color: var(--admin-teal); font-size: 10px; font-weight: bold; letter-spacing: 2px; }.admin-topbar h1 { margin: 0; font: normal 32px Georgia, serif; }.admin-date { color: var(--admin-muted); font-size: 12px; }
+.admin-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }.admin-stat { padding: 18px 20px; border: 1px solid var(--admin-line); border-radius: 5px; background: #fff; }.admin-stat p { margin: 0 0 13px; color: var(--admin-muted); font-size: 12px; }.admin-stat strong { display: block; font: normal 30px Georgia, serif; }.admin-stat small { color: #97a3a3; font-size: 10px; }.admin-stat.gold { border-top: 3px solid var(--admin-gold); }.admin-stat.teal { border-top: 3px solid var(--admin-teal); }
+.admin-layout { display: grid; grid-template-columns: 1.3fr .7fr; gap: 18px; }.admin-card { padding: 22px; border: 1px solid var(--admin-line); border-radius: 5px; background: #fff; }.admin-card + .admin-card { margin-top: 18px; }.admin-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 15px; margin-bottom: 18px; }.admin-card-head h2 { margin: 0; font: normal 21px Georgia, serif; }.admin-card-head a, .admin-action { color: var(--admin-teal); font-size: 12px; text-decoration: none; }.admin-actions { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }.admin-action { padding: 13px; border: 1px solid var(--admin-line); border-radius: 4px; background: #fbfcfb; }.admin-action:hover { border-color: var(--admin-teal); background: #eef7f3; }.admin-action b, .admin-action small { display: block; }.admin-action b { margin-bottom: 5px; color: var(--admin-ink); font-size: 12px; }.admin-action small { color: var(--admin-muted); font-size: 10px; }.admin-table { width: 100%; border-collapse: collapse; font-size: 12px; }.admin-table th { padding: 9px; border-bottom: 1px solid var(--admin-line); color: #98a4a3; font-size: 10px; font-weight: normal; text-align: left; text-transform: uppercase; }.admin-table td { padding: 13px 9px; border-bottom: 1px solid #edf1ef; }.admin-table small { display: block; margin-top: 4px; color: #99a5a4; font-size: 10px; }.admin-badge { display: inline-block; padding: 5px 8px; border-radius: 12px; background: #e4f3eb; color: #27754e; font-size: 10px; font-weight: bold; }.admin-badge.warning { background: #fff1d7; color: #946915; }.activity { display: flex; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--admin-line); }.activity-mark { flex-shrink: 0; width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--admin-teal); }.activity-mark.warning { background: var(--admin-gold); }.activity b, .activity small { display: block; }.activity b { font-size: 12px; font-weight: 600; }.activity small { margin-top: 4px; color: var(--admin-muted); font-size: 10px; }.empty-admin { padding: 25px; color: var(--admin-muted); font-size: 12px; text-align: center; }
+@media (max-width: 1050px) { .admin-sidebar { width: 215px; }.admin-content { padding: 28px 3%; }.admin-grid { grid-template-columns: repeat(2, 1fr); }.admin-layout { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .admin-shell { display: block; }.admin-sidebar { width: auto; padding: 18px; }.admin-label, .admin-sidebar-bottom { display: none; }.admin-link { display: inline-flex; margin: 10px 2px 0; padding: 8px; }.admin-link span { display: none; }.admin-content { padding: 25px 16px; }.admin-topbar { display: block; }.admin-date { margin-top: 9px; }.admin-topbar h1 { font-size: 27px; }.admin-grid { gap: 8px; }.admin-stat { padding: 14px; }.admin-stat strong { font-size: 24px; }.admin-actions { grid-template-columns: 1fr; } }
+</style>
+<div class="admin-shell">
+  <aside class="admin-sidebar">
+    <a class="admin-brand" href="{% url 'admin-home' %}"><span class="admin-seal">L</span><span>LUMINA<small>CONTROL DESK</small></span></a>
+    <p class="admin-label">QUẢN TRỊ HỆ THỐNG</p>
+    <a class="admin-link active" href="{% url 'admin-home' %}"><span>⌂</span> Tổng quan</a>
+    <a class="admin-link" href="{% url 'admin:accounts_user_changelist' %}"><span>♙</span> Tài khoản người dùng</a>
+    <a class="admin-link" href="{% url 'admin:admin_panel_room_changelist' %}"><span>▣</span> Phòng & loại phòng</a>
+    <a class="admin-link" href="{% url 'admin:admin_panel_roomprice_changelist' %}"><span>◈</span> Giá phòng</a>
+    <a class="admin-link" href="{% url 'admin:admin_panel_amenity_changelist' %}"><span>◇</span> Tiện nghi & dịch vụ</a>
+    <a class="admin-link" href="{% url 'admin:accounts_booking_changelist' %}"><span>▤</span> Đơn đặt phòng</a>
+    <a class="admin-link" href="{% url 'admin:admin_panel_activitylog_changelist' %}"><span>◌</span> Nhật ký hoạt động</a>
+    <div class="admin-sidebar-bottom"><div class="admin-user"><span class="admin-avatar">{{ request.user.full_name|first|upper }}</span><span><b>{{ request.user.full_name }}</b><small>Quản trị viên</small></span></div><a class="admin-logout" href="{% url 'admin:index' %}">↗ Mở Django Admin</a></div>
+  </aside>
+  <main class="admin-content">
+    <header class="admin-topbar"><div><p class="admin-kicker">LUMINA HOTEL / CONTROL DESK</p><h1>{% block admin_heading %}Tổng quan hệ thống{% endblock %}</h1></div><div class="admin-date">{% now "l, d/m/Y" %}<span class="admin-badge">● Hệ thống hoạt động</span></div></header>
+    {% for message in messages %}<div class="admin-card">{{ message }}</div>{% endfor %}
+    {% block admin_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}

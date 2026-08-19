@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Khu vực khách hàng | Lumina{% endblock %}
+{% block content %}
+    <h1>Khu vực khách hàng</h1>
+    <p>
+      Xin chào {{ customer_user.full_name }}. Các chức năng đặt phòng sẽ được triển
+      khai ở Phase 2.
+    </p>
+    <a href="{% url 'logout' %}">Đăng xuất Customer</a>
+{% endblock %}

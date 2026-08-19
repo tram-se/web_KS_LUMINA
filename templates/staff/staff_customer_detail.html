@@ -1,0 +1,57 @@
+{% extends "staff/staff_base.html" %}
+{% block staff_title %}Hồ sơ khách hàng{% endblock %}
+{% block staff_heading %}Hồ sơ khách hàng{% endblock %}
+{% block staff_content %}
+  <a class="back-link" href="{% url 'staff-customers' %}"
+  >← Quay lại danh sách khách hàng</a
+    >
+    <div class="detail-grid">
+      <section class="data-card detail-main">
+        <div class="profile-header">
+          <span class="avatar large">{{ customer.full_name|first|upper }}</span>
+          <div>
+            <p class="eyebrow">CUSTOMER PROFILE</p>
+            <h2>{{ customer.full_name }}</h2>
+            <p class="muted">Tham gia từ {{ customer.created_at|date:"d/m/Y" }}</p>
+          </div>
+        </div>
+        <div class="info-grid">
+          <div><small>Email</small><b>{{ customer.email }}</b></div>
+          <div>
+            <small>Số điện thoại</small
+              ><b>{{ customer.phone_number|default:"Chưa cập nhật" }}</b>
+            </div>
+            <div><small>Tên đăng nhập</small><b>{{ customer.username }}</b></div>
+            <div>
+              <small>Số đơn đặt phòng</small><b>{{ customer.bookings.count }} đơn</b>
+            </div>
+          </div>
+          <h3>Lịch sử đặt phòng gần đây</h3>
+          <div class="mini-list">
+            {% for booking in bookings %}<a
+              href="{% url 'staff-booking-detail' booking.pk %}"
+            ><b>{{ booking.booking_code }}</b
+              ><span
+              >{{ booking.room_type }} · {{ booking.check_in|date:"d/m/Y" }}</span
+                ><span class="badge {{ booking.status|lower }}"
+                >{{ booking.get_status_display }}</span
+                  ></a
+                  >{% empty %}
+              <p class="muted">Khách hàng chưa có đơn đặt phòng.</p>
+            {% endfor %}
+          </div>
+        </section>
+        <section class="data-card action-card">
+          <p class="eyebrow">UPDATE PROFILE</p>
+          <h2>Cập nhật thông tin</h2>
+          <form method="post">
+            {% csrf_token %}{{ form.as_p }}<button
+              class="button primary full"
+              type="submit"
+            >
+              Lưu thông tin
+            </button>
+          </form>
+        </section>
+      </div>
+{% endblock %}

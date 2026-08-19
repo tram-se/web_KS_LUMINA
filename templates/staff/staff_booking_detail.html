@@ -1,0 +1,61 @@
+{% extends "staff/staff_base.html" %}
+{% block staff_title %}Chi tiết đơn{% endblock %}
+{% block staff_heading %}Chi tiết đơn {{ booking.booking_code }}{% endblock %}
+{% block staff_content %}
+  <a
+      class="back-link"
+      href="{% url 'staff-bookings' %}"
+    >← Quay lại danh sách đơn</a
+      >
+      <div class="detail-grid">
+        <section class="data-card detail-main">
+          <div class="detail-header">
+            <div>
+              <p class="eyebrow">BOOKING {{ booking.booking_code }}</p>
+              <h2>{{ booking.room_type }}</h2>
+            </div>
+            <span class="badge {{ booking.status|lower }}"
+            >{{ booking.get_status_display }}</span
+              >
+            </div>
+            <div class="info-grid">
+              <div>
+                <small>Khách hàng</small><b>{{ booking.customer.full_name }}</b
+                  ><a href="{% url 'staff-customer-detail' booking.customer.pk %}"
+                  >Xem hồ sơ khách →</a
+                    >
+                  </div>
+                  <div>
+                    <small>Số điện thoại</small
+                      ><b>{{ booking.customer.phone_number|default:"Chưa cập nhật" }}</b>
+                    </div>
+                    <div>
+                      <small>Nhận phòng</small><b>{{ booking.check_in|date:"d/m/Y" }}</b>
+                    </div>
+                    <div>
+                      <small>Trả phòng</small><b>{{ booking.check_out|date:"d/m/Y" }}</b>
+                    </div>
+                    <div><small>Số khách</small><b>{{ booking.guest_count }} người</b></div>
+                    <div>
+                      <small>Tổng tiền</small><b>{{ booking.total_price|floatformat:0 }} ₫</b>
+                    </div>
+                  </div>
+                  <div class="note-box">
+                    <small>Ghi chú từ khách</small>
+                    <p>{{ booking.notes|default:"Không có ghi chú." }}</p>
+                  </div>
+                </section>
+                <section class="data-card action-card">
+                  <p class="eyebrow">PROCESS ORDER</p>
+                  <h2>Cập nhật đơn</h2>
+                  <form method="post">
+                    {% csrf_token %}{{ form.as_p }}<button
+                      class="button primary full"
+                      type="submit"
+                    >
+                      Lưu thay đổi
+                    </button>
+                  </form>
+                </section>
+              </div>
+    {% endblock %}
