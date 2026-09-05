@@ -2,89 +2,97 @@
 {% block staff_title %}Đơn đặt phòng{% endblock %}
 {% block staff_heading %}Quản lý đơn đặt phòng{% endblock %}
 {% block staff_content %}
-  <div class="page-intro">
-    <p class="muted">
-      Theo dõi, kiểm tra và xử lý yêu cầu đặt phòng của khách hàng.
-    </p>
-  </div>
-  <div class="filter-bar">
-    <a
-      class="filter {% if not active_status %}selected{% endif %}"
-      href="{% url 'staff-bookings' %}"
+<div class="page-intro">
+  <p class="muted">
+    Theo dõi, kiểm tra và xử lý yêu cầu đặt phòng của khách hàng.
+  </p>
+</div>
+<form class="search-form" method="get">
+  <input
+    type="search"
+    name="q"
+    value="{{ query }}"
+    placeholder="Tìm mã booking"
+  /><button class="button" type="submit">Tìm</button>
+</form>
+<div class="filter-bar">
+  <a
+    class="filter {% if not active_status %}selected{% endif %}"
+    href="{% url 'staff-bookings' %}"
     >Tất cả</a
-      ><a
-        class="filter {% if active_status == 'PENDING' %}selected{% endif %}"
-        href="?status=PENDING"
-      >Chờ xử lý</a
-        ><a
-          class="filter {% if active_status == 'CONFIRMED' %}selected{% endif %}"
-          href="?status=CONFIRMED"
-        >Đã xác nhận</a
-          ><a
-            class="filter {% if active_status == 'CANCELLED' %}selected{% endif %}"
-            href="?status=CANCELLED"
-          >Đã hủy</a
+  ><a
+    class="filter {% if active_status == 'PENDING' %}selected{% endif %}"
+    href="?status=PENDING"
+    >Chờ xử lý</a
+  ><a
+    class="filter {% if active_status == 'CONFIRMED' %}selected{% endif %}"
+    href="?status=CONFIRMED"
+    >Đã xác nhận</a
+  ><a
+    class="filter {% if active_status == 'CANCELLED' %}selected{% endif %}"
+    href="?status=CANCELLED"
+    >Đã hủy</a
+  >
+</div>
+<section class="data-card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã đơn</th>
+          <th>Khách hàng</th>
+          <th>Phòng / số khách</th>
+          <th>Nhận - trả phòng</th>
+          <th>Tổng tiền</th>
+          <th>Trạng thái</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in bookings %}
+        <tr>
+          <td>
+            <a class="strong" href="{% url 'staff-booking-detail' booking.pk %}"
+              >{{ booking.booking_code }}</a
+            ><small>{{ booking.created_at|date:"d/m/Y H:i" }}</small>
+          </td>
+          <td>
+            {{ booking.customer.full_name }}<small
+              >{{ booking.customer.phone_number }}</small
             >
-          </div>
-          <section class="data-card">
-            <div class="table-wrap">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Mã đơn</th>
-                    <th>Khách hàng</th>
-                    <th>Phòng / số khách</th>
-                    <th>Nhận - trả phòng</th>
-                    <th>Tổng tiền</th>
-                    <th>Trạng thái</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for booking in bookings %}
-                    <tr>
-                      <td>
-                        <a class="strong" href="{% url 'staff-booking-detail' booking.pk %}"
-                        >{{ booking.booking_code }}</a
-                          ><small>{{ booking.created_at|date:"d/m/Y H:i" }}</small>
-                        </td>
-                        <td>
-                          {{ booking.customer.full_name }}<small
-                          >{{ booking.customer.phone_number }}</small
-                            >
-                          </td>
-                          <td>
-                            {{ booking.room_type }}<small
-                            >{{ booking.guest_count }} khách</small
-                              >
-                            </td>
-                            <td>
-                              {{ booking.check_in|date:"d/m/Y" }}<small
-                              >đến {{ booking.check_out|date:"d/m/Y" }}</small
-                                >
-                              </td>
-                              <td class="strong">{{ booking.total_price|floatformat:0 }} ₫</td>
-                              <td>
-                                <span class="badge {{ booking.status|lower }}"
-                                >{{ booking.get_status_display }}</span
-                                  >
-                                </td>
-                                <td>
-                                  <a
-                                    class="icon-button"
-                                    title="Xem chi tiết"
-                                    href="{% url 'staff-booking-detail' booking.pk %}"
-                                  >→</a
-                                    >
-                                  </td>
-                                </tr>
-                  {% empty %}
-                    <tr>
-                      <td colspan="7" class="empty">Không có đơn phù hợp.</td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          </td>
+          <td>
+            {{ booking.room_type }}<small
+              >{{ booking.guest_count }} khách</small
+            >
+          </td>
+          <td>
+            {{ booking.check_in|date:"d/m/Y" }}<small
+              >đến {{ booking.check_out|date:"d/m/Y" }}</small
+            >
+          </td>
+          <td class="strong">{{ booking.total_price|floatformat:0 }} ₫</td>
+          <td>
+            <span class="badge {{ booking.status|lower }}"
+              >{{ booking.get_status_display }}</span
+            >
+          </td>
+          <td>
+            <a
+              class="icon-button"
+              title="Xem chi tiết"
+              href="{% url 'staff-booking-detail' booking.pk %}"
+              >→</a
+            >
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="empty">Không có đơn phù hợp.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
 {% endblock %}

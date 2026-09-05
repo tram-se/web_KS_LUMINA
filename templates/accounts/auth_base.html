@@ -202,6 +202,19 @@
         border-color: var(--gold);
         box-shadow: 0 0 0 3px rgba(214, 169, 95, 0.16);
       }
+      .password-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        color: var(--muted);
+        font-size: 11px;
+        cursor: pointer;
+      }
+      .password-toggle input {
+        width: auto;
+        margin: 0;
+        accent-color: var(--gold);
+      }
       .auth-form .helptext {
         display: block;
         color: #8b9699;
@@ -369,27 +382,40 @@
           <span class="brand-seal">L</span>
           <span>LUMINA<small>HOTEL & RESORT</small></span>
         </a>
-          <div class="visual-copy">
-            <span class="visual-kicker">A STAY WORTH REMEMBERING</span>
-            <h1>Đăng nhập vào<br /><em>trải nghiệm</em> Lumina.</h1>
-            <p>
-              Một không gian tinh tế cho những ngày nghỉ đáng nhớ, được chăm sóc
-              bằng sự tận tâm.
-            </p>
-          </div>
-          <div class="visual-footer">
-            <span><b>24/7</b>Hỗ trợ tận tâm</span
-              ><span><b>5★</b>Chuẩn dịch vụ</span
-                ><span><b>∞</b>Khoảnh khắc đẹp</span>
-              </div>
-            </section>
-            <main class="auth-form-side">
-              <div class="auth-card">
-                {% for message in messages %}
-                  <div class="auth-message">✓ {{ message }}</div>
-                {% endfor %}{% block auth_content %}{% endblock %}
-              </div>
-            </main>
-          </div>
-        </body>
-        </html>
+        <div class="visual-copy">
+          <span class="visual-kicker">A STAY WORTH REMEMBERING</span>
+          <h1>Đăng nhập vào<br /><em>trải nghiệm</em> Lumina.</h1>
+          <p>
+            Một không gian tinh tế cho những ngày nghỉ đáng nhớ, được chăm sóc
+            bằng sự tận tâm.
+          </p>
+        </div>
+        <div class="visual-footer">
+          <span><b>24/7</b>Hỗ trợ tận tâm</span>
+          <span><b>5★</b>Chuẩn dịch vụ</span>
+          <span><b>∞</b>Khoảnh khắc đẹp</span>
+        </div>
+      </section>
+      <main class="auth-form-side">
+        <div class="auth-card">
+          {% for message in messages %}
+            <div class="auth-message">✓ {{ message }}</div>
+          {% endfor %}{% block auth_content %}{% endblock %}
+        </div>
+      </main>
+    </div>
+  </body>
+  <script>
+    document
+      .querySelectorAll('.auth-form input[type="password"]')
+      .forEach((passwordInput) => {
+        const toggle = document.createElement("label");
+        toggle.className = "password-toggle";
+        toggle.innerHTML = '<input type="checkbox" /> Hiện mật khẩu';
+        toggle.querySelector("input").addEventListener("change", (event) => {
+          passwordInput.type = event.target.checked ? "text" : "password";
+        });
+        passwordInput.closest("p").appendChild(toggle);
+      });
+  </script>
+</html>

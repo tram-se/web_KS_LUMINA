@@ -1,0 +1,28 @@
+{% extends "accounts/customer_base.html" %}
+{% block customer_title %}Thanh toán {{ booking.booking_code }}{% endblock %}
+{% block customer_content %}
+<section class="booking-panel" style="max-width:760px;margin:auto">
+  <p class="customer-kicker">ONLINE PAYMENT</p>
+  <h1>Thanh toán đơn {{ booking.booking_code }}</h1>
+  <p class="customer-subtitle">Quét mã QR bằng ứng dụng ngân hàng, kiểm tra đúng số tiền rồi chuyển khoản.</p>
+  <div style="display:grid;grid-template-columns:minmax(220px,300px) 1fr;gap:28px;align-items:start">
+    {% if momo_qr_url %}
+    <img src="{{ momo_qr_url }}" alt="QR MoMo thanh toán" style="width:100%;max-width:300px;border:1px solid var(--customer-line)" />
+    <p class="customer-subtitle">Quét mã QR MoMo của Lumina để thanh toán.</p>
+    {% else %}
+    <img src="{{ qr_data }}" alt="QR thanh toán" style="width:100%;max-width:300px;border:1px solid var(--customer-line)" />
+    <p class="customer-subtitle">Chưa có QR MoMo, hệ thống đang hiển thị QR chuyển khoản dự phòng.</p>
+    {% endif %}
+    <div>
+      <p><b>Số tiền:</b> {{ booking.total_price|floatformat:0 }} ₫</p>
+      <p><b>Nội dung:</b> {{ payment_text }}</p>
+      <p class="customer-subtitle">Sau khi chuyển khoản, tải ảnh biên lai để nhân viên đối chiếu.</p>
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ proof_form.as_p }}
+        <button class="customer-button" type="submit">Gửi biên lai thanh toán</button>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

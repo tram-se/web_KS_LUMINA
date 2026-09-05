@@ -1,0 +1,33 @@
+{% extends "accounts/auth_base.html" %} {% block title %}Đăng ký Staff |
+Lumina{% endblock %} {% block auth_content %}
+<p class="form-kicker">JOIN THE LUMINA TEAM</p>
+<h2>Tạo tài khoản Staff.</h2>
+<p class="auth-subtitle">
+  Đăng ký để truy cập khu vực quản lý vận hành của Lumina.
+</p>
+<form class="auth-form" method="post">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <ul class="auth-errors">
+    {{ form.non_field_errors }}
+  </ul>
+  {% endif %}
+  {% for field in form %}
+  <p>
+    {{ field.label_tag }}{{ field }}
+    {% if field.help_text %}
+      <span class="helptext">{{ field.help_text|safe }}</span>
+    {% endif %}
+    {% if field.errors %}
+      <span class="auth-errors">{{ field.errors|striptags }}</span>
+    {% endif %}
+  </p>
+  {% endfor %}
+  <button class="auth-submit" type="submit">
+    Tạo tài khoản Staff <span>→</span>
+  </button>
+</form>
+<p class="auth-switch">
+  Đã có tài khoản? <a href="{% url 'staff-login' %}">Đăng nhập Staff</a>
+</p>
+{% endblock %}

@@ -57,9 +57,10 @@
   <body>
     <nav>
       <a href="{% url 'dashboard' %}">Lumina Hotel</a>
+      <a href="{% url 'customer-home' %}">Giao diện khách hàng</a>
     </nav>
     {% for message in messages %}
-      <p class="message">{{ message }}</p>
+    <p class="message">{{ message }}</p>
     {% endfor %}
     <main class="panel">{% block content %}{% endblock %}</main>
   </body>

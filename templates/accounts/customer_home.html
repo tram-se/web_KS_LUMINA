@@ -1,10 +1,263 @@
-{% extends "base.html" %}
-{% block title %}Khu vực khách hàng | Lumina{% endblock %}
-{% block content %}
-    <h1>Khu vực khách hàng</h1>
-    <p>
-      Xin chào {{ customer_user.full_name }}. Các chức năng đặt phòng sẽ được triển
-      khai ở Phase 2.
+{% extends "accounts/customer_base.html" %} {% block customer_title %}Trang
+chủ{% endblock %} {% block customer_content %}
+<style>
+  .customer-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 32px;
+    padding: 36px;
+    margin-bottom: 24px;
+    background: #e4f0eb;
+    border-left: 5px solid var(--customer-teal);
+  }
+  .customer-hero h1 {
+    margin-bottom: 10px;
+  }
+  .hero-mark {
+    display: grid;
+    place-items: center;
+    min-width: 150px;
+    height: 150px;
+    border: 1px solid var(--customer-gold);
+    border-radius: 50%;
+    color: var(--customer-gold);
+    text-align: center;
+  }
+  .hero-mark span {
+    font:
+      italic 72px Georgia,
+      serif;
+    line-height: 0.8;
+  }
+  .hero-mark small {
+    color: var(--customer-ink);
+    font-size: 9px;
+    letter-spacing: 2px;
+  }
+  .quick-search {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    padding: 20px 24px;
+    margin-bottom: 42px;
+    background: #fff;
+    border: 1px solid var(--customer-line);
+  }
+  .quick-search h2,
+  .home-section h2 {
+    margin: 0;
+    font:
+      normal 24px Georgia,
+      serif;
+  }
+  .home-section {
+    margin-bottom: 42px;
+  }
+  .section-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 18px;
+    margin-bottom: 20px;
+  }
+  .section-heading .customer-subtitle {
+    margin: 8px 0 0;
+  }
+  .home-room-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+  .home-room-card {
+    overflow: hidden;
+    background: #fff;
+    border: 1px solid var(--customer-line);
+  }
+  .home-room-image {
+    height: 190px;
+    background-position: center;
+    background-size: cover;
+    background-color: #dfeae5;
+  }
+  .home-room-image span {
+    display: inline-block;
+    margin: 14px;
+    padding: 6px 9px;
+    background: #fff;
+    color: var(--customer-teal);
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .home-room-body {
+    padding: 18px;
+  }
+  .home-room-title,
+  .home-room-footer,
+  .home-room-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .home-room-title h3 {
+    margin: 0;
+    font:
+      normal 22px Georgia,
+      serif;
+  }
+  .home-room-title span {
+    color: var(--customer-muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  .home-room-meta {
+    margin: 16px 0;
+    color: var(--customer-muted);
+    font-size: 11px;
+    flex-wrap: wrap;
+  }
+  .home-room-meta strong {
+    color: var(--customer-teal);
+    font-size: 11px;
+  }
+  .home-room-footer {
+    padding-top: 14px;
+    border-top: 1px solid var(--customer-line);
+  }
+  .home-room-footer .room-price {
+    font-size: 16px;
+  }
+  @media (max-width: 900px) {
+    .home-room-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  @media (max-width: 620px) {
+    .customer-hero {
+      padding: 24px;
+    }
+    .hero-mark {
+      display: none;
+    }
+    .quick-search,
+    .section-heading {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .home-room-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+<section class="customer-hero">
+  <div>
+    <p class="customer-kicker">WELCOME TO LUMINA</p>
+    <h1>Xin chào, {{ customer_user.full_name|default:"quý khách" }}.</h1>
+    <p class="customer-subtitle">
+      Chọn một không gian vừa vặn cho những ngày nghỉ đáng nhớ của bạn.
     </p>
-    <a href="{% url 'logout' %}">Đăng xuất Customer</a>
+    <a class="customer-button" href="#room-types">Xem các hạng phòng ↓</a>
+  </div>
+  <div class="hero-mark">
+    <span>L</span><small>YOUR STAY<br />YOUR WAY</small>
+  </div>
+</section>
+
+<section class="quick-search">
+  <div>
+    <p class="customer-kicker">PLAN YOUR STAY</p>
+    <h2>Tìm căn phòng phù hợp</h2>
+  </div>
+  <a class="customer-button secondary" href="{% url 'room-list' %}"
+    >Tìm kiếm chi tiết →</a
+  >
+</section>
+
+<section id="room-types" class="home-section">
+  <div class="section-heading">
+    <div>
+      <p class="customer-kicker">ROOM COLLECTION</p>
+      <h2>Các hạng phòng tại Lumina</h2>
+      <p class="customer-subtitle">
+        Không gian được chuẩn bị cho từng nhu cầu nghỉ dưỡng.
+      </p>
+    </div>
+    <a class="customer-subtitle" href="{% url 'room-list' %}">Xem tất cả →</a>
+  </div>
+  <div class="home-room-grid">
+    {% for room_type in room_types %}
+    <article class="home-room-card">
+      <div
+        class="home-room-image {% if not room_type.image_url %}no-image{% endif %}"
+        {% if room_type.image_url %}style="background-image:url('{{ room_type.image_url }}')"{% endif %}
+      >
+        <span>{% if room_type.available_quantity %}Còn phòng{% else %}Hết phòng{% endif %}</span>
+      </div>
+      <div class="home-room-body">
+        <div class="home-room-title">
+          <h3>{{ room_type.name }}</h3>
+          <span>{{ room_type.code }}</span>
+        </div>
+        <p class="room-description">
+          {{ room_type.description|default:"Một không gian thanh lịch cho kỳ nghỉ thư thái."|truncatechars:120 }}
+        </p>
+        <div class="home-room-meta">
+          <span>♙ {{ room_type.max_guests }} khách</span
+          ><span>◫ {{ room_type.area_sqm }}m²</span
+          ><strong>Còn {{ room_type.available_quantity }} phòng</strong>
+        </div>
+        <div class="home-room-footer">
+          <span class="room-price"
+            >{% if room_type.current_price %}{{ room_type.current_price.price|floatformat:0 }} ₫<small
+              >/ {{ room_type.current_price.get_unit_display }}</small
+            >{% else %}<small>Liên hệ để biết giá</small>{% endif %}</span
+          >{% if room_type.featured_room %}<a
+            class="customer-button secondary"
+            href="{% url 'room-detail' room_type.featured_room.pk %}"
+            >Xem phòng →</a
+          >{% endif %}
+        </div>
+      </div>
+    </article>
+    {% empty %}
+    <div class="empty-customer">Hiện chưa có hạng phòng nào được công bố.</div>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="bookings" class="booking-card home-bookings">
+  <div class="admin-card-head">
+    <div>
+      <p class="customer-kicker">MY BOOKINGS</p>
+      <h2>Đơn đặt phòng của tôi</h2>
+    </div>
+    <a class="customer-subtitle" href="{% url 'room-list' %}"
+      >Đặt phòng mới →</a
+    >
+  </div>
+  {% for booking in recent_bookings %}
+  <div class="booking-row">
+    <span
+      ><b>{{ booking.booking_code }}</b
+      ><small
+        >{{ booking.room_type }} · {{ booking.check_in|date:"d/m/Y" }} - {{
+        booking.check_out|date:"d/m/Y" }}{% if booking.room %} · Phòng {{
+        booking.room.number }}{% endif %}</small
+      ></span
+    ><span
+      ><span class="status {{ booking.status|lower }}"
+        >{{ booking.get_status_display }}</span
+      ><a
+        class="customer-subtitle"
+        href="{% url 'customer-booking-detail' booking.pk %}"
+        >Xem chi tiết →</a
+      ></span
+    >
+  </div>
+  {% empty %}
+  <div class="empty-customer">Bạn chưa có đơn đặt phòng nào.</div>
+  {% endfor %}
+</section>
 {% endblock %}

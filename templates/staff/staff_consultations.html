@@ -2,37 +2,33 @@
 {% block staff_title %}Tư vấn khách hàng{% endblock %}
 {% block staff_heading %}Khách hàng cần tư vấn{% endblock %}
 {% block staff_content %}
-  <div class="page-intro">
-    <p class="muted">
-      Tiếp nhận nhu cầu và chủ động liên hệ để tư vấn phòng, giá và
-      dịch vụ.
-    </p>
-  </div>
-  <div class="consult-grid">
-    {% for item in consultations %}<a
-      class="consult-card"
-      href="{% url 'staff-consultation-detail' item.pk %}"
+<div class="page-intro">
+  <p class="muted">
+    Tiếp nhận nhu cầu và chủ động liên hệ để tư vấn phòng, giá và dịch vụ.
+  </p>
+</div>
+<div class="consult-grid">
+  {% for item in consultations %}<a
+    class="consult-card"
+    href="{% url 'staff-consultation-detail' item.pk %}"
     ><div class="consult-top">
       <span class="avatar soft">{{ item.full_name|first|upper }}</span
-        ><span class="badge {{ item.status|lower }}"
+      ><span class="badge {{ item.status|lower }}"
         >{{ item.get_status_display }}</span
-          >
-        </div>
-        <h3>{{ item.full_name }}</h3>
-        <strong class="phone">☎ {{ item.phone_number }}</strong>
-        <p>
-          {% if item.message %}
-            {{ item.message|truncatechars:100 }}
-          {% else %}
-            Khách chưa để lại nội dung cụ thể.
-          {% endif %}
-        </p>
-        <div class="consult-footer">
-          <span>{{ item.preferred_room|default:"Chưa chọn hạng phòng" }}</span
-            ><span>{{ item.created_at|date:"d/m/Y H:i" }} →</span>
-          </div></a
-          >{% empty %}
-      <div class="data-card empty">Chưa có yêu cầu tư vấn.</div>
-    {% endfor %}
-  </div>
+      >
+    </div>
+    <h3>{{ item.full_name }}</h3>
+    <strong class="phone">☎ {{ item.phone_number }}</strong>
+    <p>
+      {% if item.message %} {{ item.message|truncatechars:100 }} {% else %}
+      Khách chưa để lại nội dung cụ thể. {% endif %}
+    </p>
+    <div class="consult-footer">
+      <span>{{ item.preferred_room|default:"Chưa chọn hạng phòng" }}</span
+      ><span>{{ item.created_at|date:"d/m/Y H:i" }} →</span>
+    </div></a
+  >{% empty %}
+  <div class="data-card empty">Chưa có yêu cầu tư vấn.</div>
+  {% endfor %}
+</div>
 {% endblock %}

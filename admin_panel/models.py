@@ -1,13 +1,59 @@
+from io import BytesIO
+
+from django.core.files.base import ContentFile
 from django.db import models
+from PIL import Image
+
+
+def compress_image(uploaded_file, max_size=2 * 1024 * 1024):
+    image = Image.open(uploaded_file)
+    image = image.convert("RGB")
+    image.thumbnail((2400, 2400), Image.Resampling.LANCZOS)
+    quality = 85
+    output = BytesIO()
+    image.save(output, format="JPEG", quality=quality, optimize=True)
+    while output.tell() > max_size and quality > 35:
+        quality -= 10
+        output = BytesIO()
+        image.save(output, format="JPEG", quality=quality, optimize=True)
+    return ContentFile(
+        output.getvalue(), name=f"{uploaded_file.name.rsplit('.', 1)[0]}.jpg"
+    )
 
 
 class RoomType(models.Model):
+    class ListingStatus(models.TextChoices):
+        PENDING = "PENDING", "Chờ duyệt"
+        PUBLISHED = "PUBLISHED", "Đã duyệt"
+        REJECTED = "REJECTED", "Từ chối"
+
     name = models.CharField("Tên loại phòng", max_length=120, unique=True)
     code = models.CharField("Mã loại", max_length=30, unique=True)
     description = models.TextField("Mô tả", blank=True)
     max_guests = models.PositiveSmallIntegerField("Số khách tối đa", default=2)
     area_sqm = models.PositiveSmallIntegerField("Diện tích (m²)", default=25)
+    image_url = models.ImageField("Ảnh phòng", upload_to="room-listings/", blank=True)
+    amenities = models.ManyToManyField(
+        "Amenity",
+        blank=True,
+        related_name="room_types",
+        verbose_name="Tiện nghi",
+    )
     is_active = models.BooleanField("Đang kinh doanh", default=True)
+    listing_status = models.CharField(
+        "Trạng thái đăng bán",
+        max_length=20,
+        choices=ListingStatus.choices,
+        default=ListingStatus.PUBLISHED,
+    )
+    created_by = models.ForeignKey(
+        "accounts.User",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="room_listings",
+        verbose_name="Nhân viên đăng",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -17,6 +63,31 @@ class RoomType(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+
+    @property
+    def total_quantity(self):
+        return self.rooms.count()
+
+
+class RoomImage(models.Model):
+    room_type = models.ForeignKey(
+        RoomType,
+        on_delete=models.CASCADE,
+        related_name="images",
+        verbose_name="Loại phòng",
+    )
+    image = models.ImageField("Hình ảnh", upload_to="room-listings/")
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("uploaded_at",)
+        verbose_name = "Ảnh phòng"
+        verbose_name_plural = "Ảnh phòng"
+
+    def save(self, *args, **kwargs):
+        if self.image:
+            self.image = compress_image(self.image)
+        super().save(*args, **kwargs)
 
 
 class Room(models.Model):
@@ -53,6 +124,10 @@ class Room(models.Model):
 
 
 class RoomPrice(models.Model):
+    class Unit(models.TextChoices):
+        NIGHT = "NIGHT", "Theo đêm"
+        HOUR = "HOUR", "Theo giờ"
+
     room_type = models.ForeignKey(
         RoomType,
         on_delete=models.CASCADE,
@@ -60,6 +135,9 @@ class RoomPrice(models.Model):
         verbose_name="Loại phòng",
     )
     price = models.DecimalField("Giá/đêm", max_digits=12, decimal_places=0)
+    unit = models.CharField(
+        "Đơn vị tính", max_length=10, choices=Unit.choices, default=Unit.NIGHT
+    )
     valid_from = models.DateField("Áp dụng từ")
     valid_to = models.DateField("Áp dụng đến", null=True, blank=True)
     is_active = models.BooleanField("Đang áp dụng", default=True)

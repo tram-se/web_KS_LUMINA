@@ -1,0 +1,107 @@
+{% extends "accounts/customer_base.html" %} {% block customer_title %}Danh sách
+phòng{% endblock %} {% block customer_content %}
+<style>
+  .availability-ok {
+    color: var(--customer-teal);
+    font-weight: 600;
+  }
+  .availability-none {
+    color: #a05b4f;
+    font-weight: 600;
+  }
+  .availability-note {
+    padding: 10px 12px;
+    background: #fff4ef;
+    border-left: 3px solid #d98970;
+    font-size: 12px;
+  }
+</style>
+<p class="customer-kicker">STAY YOUR WAY</p>
+<h1>Chọn không gian cho kỳ nghỉ.</h1>
+<p class="customer-subtitle">
+  Tìm căn phòng phù hợp với lịch trình, số khách và ngân sách của bạn.
+</p>
+<form class="search-card" method="get">
+  <div class="search-grid">
+    {% for field in form %}
+    <div>
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+      {% for error in field.errors %}<small class="form-errors"
+        >{{ error }}</small
+      >{% endfor %}
+    </div>
+    {% endfor %}<button class="customer-button" type="submit">
+      Tìm phòng →
+    </button>
+  </div>
+</form>
+{% if form.non_field_errors %}
+<div class="form-errors">{{ form.non_field_errors }}</div>
+{% endif %}
+<div class="room-grid">
+  {% for room in rooms %}
+  <article class="room-card">
+    <div
+      class="room-image {% if not room.room_type.image_url %}no-image{% endif %}"
+      {% if room.room_type.image_url %}style="background-image:url('{{ room.room_type.image_url }}')"{% endif %}
+    >
+      <span>
+        {% if room.available_quantity %}Còn trống{% endif %}
+        {% if not room.available_quantity and room.selected_check_in %}
+          Hết theo ngày đã chọn
+        {% endif %}
+        {% if not room.available_quantity and not room.selected_check_in %}
+          Hiện hết phòng
+        {% endif %}
+      </span>
+    </div>
+    <div class="room-body">
+      <h2>{{ room.room_type.name }}</h2>
+      <div class="room-meta">
+        <span>⌂ Phòng {{ room.number }}</span
+        ><span>♙ {{ room.room_type.max_guests }} khách</span
+        ><span>◫ {{ room.room_type.area_sqm }}m²</span>
+      </div>
+      {% if room.available_quantity %}
+      <p class="availability-ok">
+        Còn lại: {{ room.available_quantity }} phòng
+      </p>
+      {% endif %}
+      {% if not room.available_quantity %}
+      <p class="availability-none">
+        {% if room.selected_check_in %}
+          Ngày {{ room.selected_check_in|date:"d/m/Y" }} đến
+          {{ room.selected_check_out|date:"d/m/Y" }} đã hết phòng
+        {% endif %}
+        {% if not room.selected_check_in %}Hiện chưa còn phòng trống{% endif %}
+      </p>
+      {% endif %}
+      <p class="room-description">
+        {{ room.room_type.description|default:"Không gian nghỉ dưỡng tinh tế tại Lumina."|truncatechars:100 }}
+      </p>
+      <div class="room-footer">
+        <span class="room-price"
+          >{% if room.current_price %}{{ room.current_price|floatformat:0 }}
+          ₫<small>mỗi đêm</small>{% else %}<small>Liên hệ để biết giá</small>{% endif %}</span
+        >
+        {% url 'room-detail' room.pk as room_detail_url %}
+        {% if room.selected_check_in %}
+        {% with start=room.selected_check_in|date:'Y-m-d' end=room.selected_check_out|date:'Y-m-d' %}
+        <a class="customer-button secondary" href="{{ room_detail_url }}?check_in={{ start }}&amp;check_out={{ end }}"
+          >Xem chi tiết</a
+        >
+        {% endwith %}
+        {% endif %}
+        {% if not room.selected_check_in %}
+        <a class="customer-button secondary" href="{{ room_detail_url }}"
+          >Xem chi tiết</a
+        >
+        {% endif %}
+      </div>
+    </div>
+  </article>
+  {% empty %}
+  <div class="empty-customer">Không tìm thấy phòng phù hợp.</div>
+  {% endfor %}
+</div>
+{% endblock %}

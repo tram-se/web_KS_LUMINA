@@ -7,6 +7,8 @@ from django.views.decorators.csrf import ensure_csrf_cookie
 
 from accounts.models import User
 
+from .forms import StaffRegistrationForm
+
 
 @never_cache
 @ensure_csrf_cookie
@@ -25,6 +27,17 @@ def staff_login(request):
             return redirect("staff-home")
         form.add_error(None, "Tài khoản này không thuộc khu vực Staff.")
     return render(request, "accounts/login.html", {"form": form, "login_area": "Staff"})
+
+
+def staff_register(request):
+    form = StaffRegistrationForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        user = form.save()
+        request.session.cycle_key()
+        request.session["staff_user_id"] = user.pk
+        messages.success(request, "Đăng ký tài khoản Staff thành công.")
+        return redirect("staff-home")
+    return render(request, "accounts/staff_register.html", {"form": form})
 
 
 def staff_logout(request):

@@ -76,7 +76,24 @@ TIME_ZONE = "Asia/Ho_Chi_Minh"
 USE_I18N = True
 USE_TZ = True
 STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+PAYMENT_BANK_ID = os.environ.get("PAYMENT_BANK_ID", "VCB")
+PAYMENT_BANK_ACCOUNT = os.environ.get("PAYMENT_BANK_ACCOUNT", "0123456789")
+PAYMENT_BANK_ACCOUNT_NAME = os.environ.get("PAYMENT_BANK_ACCOUNT_NAME", "LUMINA HOTEL")
+MOMO_QR_IMAGE = os.environ.get("MOMO_QR_IMAGE", "payment/momo.jpg")
+MOMO_PARTNER_CODE = os.environ.get("MOMO_PARTNER_CODE", "")
+MOMO_ACCESS_KEY = os.environ.get("MOMO_ACCESS_KEY", "")
+MOMO_SECRET_KEY = os.environ.get("MOMO_SECRET_KEY", "")
+MOMO_API_URL = os.environ.get(
+    "MOMO_API_URL", "https://test-payment.momo.vn/v2/gateway/api/create"
+)
+MOMO_RETURN_URL = os.environ.get("MOMO_RETURN_URL", "")
+MOMO_IPN_URL = os.environ.get("MOMO_IPN_URL", "")
+DATA_UPLOAD_MAX_MEMORY_SIZE = None
+FILE_UPLOAD_MAX_MEMORY_SIZE = 10 * 1024 * 1024
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 LOGIN_URL = "login"

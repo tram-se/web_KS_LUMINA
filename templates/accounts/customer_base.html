@@ -1,0 +1,449 @@
+{% extends "base.html" %} {% block title %}{% block customer_title %}Khách
+hàng{% endblock %} | Lumina{% endblock %} {% block content %}
+<style>
+  :root {
+    --customer-ink: #16292c;
+    --customer-muted: #718183;
+    --customer-line: #e2e9e6;
+    --customer-paper: #f7faf8;
+    --customer-teal: #126d68;
+    --customer-gold: #d4a552;
+  }
+  body {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: var(--customer-paper);
+    color: var(--customer-ink);
+    font-family: "Segoe UI", Arial, sans-serif;
+  }
+  body > nav {
+    display: none;
+  }
+  .customer-shell {
+    min-height: 100vh;
+  }
+  .customer-nav {
+    height: 74px;
+    padding: 0 6%;
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    background: #fff;
+    border-bottom: 1px solid var(--customer-line);
+  }
+  .customer-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--customer-ink);
+    font:
+      700 17px Georgia,
+      serif;
+    letter-spacing: 2px;
+    text-decoration: none;
+  }
+  .customer-seal {
+    display: grid;
+    place-items: center;
+    width: 35px;
+    height: 35px;
+    border: 1px solid var(--customer-gold);
+    border-radius: 50%;
+    color: #b0812d;
+    font: italic 22px Georgia;
+  }
+  .customer-nav-links {
+    display: flex;
+    gap: 22px;
+    margin-left: auto;
+  }
+  .customer-nav-links a {
+    color: var(--customer-muted);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  .customer-nav-links a:hover {
+    color: var(--customer-teal);
+  }
+  .customer-profile {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    color: var(--customer-ink);
+    font-size: 12px;
+  }
+  .customer-avatar {
+    display: grid;
+    place-items: center;
+    width: 31px;
+    height: 31px;
+    border-radius: 50%;
+    background: #d9ece5;
+    color: var(--customer-teal);
+    font-weight: bold;
+  }
+  .customer-content {
+    max-width: 1280px;
+    margin: auto;
+    padding: 42px 6% 70px;
+  }
+  .customer-kicker {
+    margin: 0 0 10px;
+    color: var(--customer-teal);
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 2px;
+  }
+  .customer-content h1 {
+    margin: 0;
+    font:
+      normal 37px Georgia,
+      serif;
+  }
+  .customer-subtitle {
+    color: var(--customer-muted);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .customer-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 17px;
+    border: 0;
+    border-radius: 3px;
+    background: var(--customer-teal);
+    color: #fff;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .customer-button.secondary {
+    background: #fff;
+    border: 1px solid var(--customer-line);
+    color: var(--customer-teal);
+  }
+  .search-card,
+  .room-card,
+  .booking-card {
+    padding: 22px;
+    background: #fff;
+    border: 1px solid var(--customer-line);
+    border-radius: 5px;
+  }
+  .search-card {
+    margin: 28px 0;
+  }
+  .search-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    align-items: end;
+  }
+  .search-grid label,
+  .booking-form label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--customer-muted);
+    font-size: 11px;
+    font-weight: bold;
+  }
+  .search-grid input,
+  .search-grid select,
+  .booking-form input,
+  .booking-form textarea {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--customer-line);
+    border-radius: 3px;
+    background: #fff;
+    font: inherit;
+    font-size: 12px;
+  }
+  .search-grid .customer-button {
+    width: 100%;
+  }
+  .room-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .room-card {
+    padding: 0;
+    overflow: hidden;
+  }
+  .room-image {
+    height: 185px;
+    background: #d9e9e5 center/cover no-repeat;
+    display: flex;
+    align-items: flex-end;
+    padding: 15px;
+  }
+  .room-image.no-image {
+    background: linear-gradient(135deg, #d6e8e3, #b4d2ca);
+  }
+  .room-image span {
+    padding: 5px 8px;
+    border-radius: 12px;
+    background: #fff;
+    color: var(--customer-teal);
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .room-body {
+    padding: 19px;
+  }
+  .room-body h2 {
+    margin: 0 0 7px;
+    font:
+      normal 22px Georgia,
+      serif;
+  }
+  .room-meta {
+    display: flex;
+    gap: 12px;
+    color: var(--customer-muted);
+    font-size: 11px;
+  }
+  .room-description {
+    min-height: 38px;
+    color: var(--customer-muted);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .room-footer {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    margin-top: 17px;
+    padding-top: 14px;
+    border-top: 1px solid var(--customer-line);
+  }
+  .room-price {
+    color: var(--customer-teal);
+    font:
+      normal 20px Georgia,
+      serif;
+  }
+  .room-price small {
+    display: block;
+    color: var(--customer-muted);
+    font:
+      10px "Segoe UI",
+      Arial,
+      sans-serif;
+  }
+  .room-detail {
+    display: grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 20px;
+  }
+  .detail-card {
+    padding: 25px;
+    background: #fff;
+    border: 1px solid var(--customer-line);
+    border-radius: 5px;
+  }
+  .detail-image {
+    height: 330px;
+    margin: -25px -25px 25px;
+    background: #d9e9e5 center/cover no-repeat;
+  }
+  .detail-image.no-image {
+    background: linear-gradient(135deg, #d6e8e3, #b4d2ca);
+  }
+  .detail-card h1 {
+    font-size: 32px;
+  }
+  .amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 17px;
+  }
+  .amenity {
+    padding: 7px 10px;
+    background: #eef7f3;
+    color: var(--customer-teal);
+    font-size: 11px;
+  }
+  .booking-form p {
+    margin: 0 0 15px;
+  }
+  .booking-form .errorlist,
+  .form-errors {
+    color: #a94f4f;
+    padding: 0;
+    margin: 0 0 14px;
+    list-style: none;
+    font-size: 11px;
+  }
+  .booking-summary {
+    padding: 14px;
+    background: #f3f8f5;
+    margin-bottom: 17px;
+  }
+  .booking-summary b {
+    display: block;
+    margin-bottom: 5px;
+    font:
+      normal 19px Georgia,
+      serif;
+  }
+  .booking-summary span {
+    color: var(--customer-muted);
+    font-size: 11px;
+  }
+  .booking-total {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 4px 0 18px;
+    padding: 13px 14px;
+    background: #f3f8f5;
+    color: var(--customer-muted);
+    font-size: 12px;
+  }
+  .booking-total strong {
+    color: var(--customer-teal);
+    font-size: 16px;
+  }
+  .booking-card h2 {
+    margin: 0 0 18px;
+    font:
+      normal 22px Georgia,
+      serif;
+  }
+  .booking-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--customer-line);
+    font-size: 12px;
+  }
+  .booking-row small {
+    display: block;
+    margin-top: 4px;
+    color: var(--customer-muted);
+  }
+  .status {
+    padding: 5px 8px;
+    border-radius: 12px;
+    background: #fff1d7;
+    color: #946915;
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .status.confirmed {
+    background: #e4f3eb;
+    color: #27754e;
+  }
+  .status.cancelled {
+    background: #f9e6e4;
+    color: #a94f4f;
+  }
+  .empty-customer {
+    padding: 35px;
+    text-align: center;
+    color: var(--customer-muted);
+    font-size: 13px;
+  }
+  .admin-card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 15px;
+    margin-bottom: 18px;
+  }
+  .admin-card-head h2 {
+    margin: 0;
+    font:
+      normal 22px Georgia,
+      serif;
+  }
+  .admin-card-head a {
+    color: var(--customer-teal);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  @media (max-width: 950px) {
+    .search-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .room-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .room-detail {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 620px) {
+    .customer-nav {
+      padding: 0 18px;
+    }
+    .customer-nav-links {
+      gap: 10px;
+    }
+    .customer-nav-links a {
+      font-size: 10px;
+    }
+    .customer-profile span:last-child {
+      display: none;
+    }
+    .customer-content {
+      padding: 30px 18px;
+    }
+    .customer-content h1 {
+      font-size: 30px;
+    }
+    .search-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .search-grid .customer-button {
+      grid-column: span 2;
+    }
+    .room-grid {
+      grid-template-columns: 1fr;
+    }
+    .detail-image {
+      height: 220px;
+    }
+    .room-detail {
+      gap: 12px;
+    }
+  }
+</style>
+<div class="customer-shell">
+  <nav class="customer-nav">
+    <a class="customer-logo" href="{% url 'customer-home' %}"
+      ><span class="customer-seal">L</span>LUMINA</a
+    >
+    <div class="customer-nav-links">
+      <a href="{% url 'room-list' %}">Khám phá phòng</a
+      ><a href="{% url 'customer-home' %}#bookings">Đơn của tôi</a>
+    </div>
+    <div class="customer-profile">
+      {% if customer_user %}
+      <span class="customer-avatar"
+        >{{ customer_user.full_name|first|upper }}</span
+      >
+      <span>{{ customer_user.full_name }}</span>
+      <a href="{% url 'customer-profile' %}">Tài khoản</a>
+      <a href="{% url 'logout' %}">Thoát</a>
+      {% else %}
+      <a href="{% url 'login' %}">Đăng nhập</a>
+      <a href="{% url 'register' %}">Đăng ký</a>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="customer-content">
+    {% for message in messages %}
+    <div class="booking-summary">✓ {{ message }}</div>
+    {% endfor %}{% block customer_content %}{% endblock %}
+  </main>
+</div>
+{% endblock %}
