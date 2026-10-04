@@ -1,0 +1,23 @@
+{% extends "staff/staff_base.html" %}
+{% block staff_title %}Thông báo{% endblock %}
+{% block staff_heading %}Thông báo{% endblock %}
+{% block staff_content %}
+<section class="data-card notification-list">
+  <!-- Danh sách booking mới và các cập nhật cần nhân viên xử lý. -->
+  {% for notification in notifications %}
+  <article class="notification-item {% if not notification.is_read %}unread{% endif %}">
+    <div><strong>{{ notification.title }}</strong><p>{{ notification.message }}</p>{% if notification.booking %}<a href="{% url 'staff-booking-detail' notification.booking.pk %}">Mở booking →</a>{% endif %}</div>
+    <small>{{ notification.created_at|date:"d/m/Y H:i" }}</small>
+  </article>
+  {% empty %}<div class="empty">Chưa có thông báo.</div>{% endfor %}
+</section>
+<style>
+  .notification-list { padding: 20px; }
+  .notification-item { display:flex; justify-content:space-between; gap:20px; padding:16px 0; border-bottom:1px solid var(--line); }
+  .notification-item strong { font-size:13px; }
+  .notification-item p { margin:6px 0; color:var(--muted); font-size:12px; }
+  .notification-item a { color:var(--teal); font-size:11px; font-weight:bold; text-decoration:none; }
+  .notification-item small { color:var(--muted); white-space:nowrap; font-size:10px; }
+  .notification-item.unread { border-left:3px solid var(--teal); padding-left:12px; }
+</style>
+{% endblock %}

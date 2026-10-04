@@ -46,11 +46,11 @@ phòng{% endblock %} {% block customer_content %}
       {% if room.room_type.image_url %}style="background-image:url('{{ room.room_type.image_url }}')"{% endif %}
     >
       <span>
-        {% if room.available_quantity %}Còn trống{% endif %}
-        {% if not room.available_quantity and room.selected_check_in %}
+        {% if room.room_type.is_under_maintenance %}Đang sửa chữa{% elif room.is_available %}Còn trống{% endif %}
+        {% if not room.is_available and room.selected_check_in %}
           Hết theo ngày đã chọn
         {% endif %}
-        {% if not room.available_quantity and not room.selected_check_in %}
+        {% if not room.is_available and not room.selected_check_in %}
           Hiện hết phòng
         {% endif %}
       </span>
@@ -62,12 +62,14 @@ phòng{% endblock %} {% block customer_content %}
         ><span>♙ {{ room.room_type.max_guests }} khách</span
         ><span>◫ {{ room.room_type.area_sqm }}m²</span>
       </div>
-      {% if room.available_quantity %}
+      {% if room.room_type.is_under_maintenance %}
+      <p class="availability-none">Hạng phòng đang được sửa chữa, tạm ngưng nhận đặt.</p>
+      {% elif room.is_available %}
       <p class="availability-ok">
         Còn lại: {{ room.available_quantity }} phòng
       </p>
       {% endif %}
-      {% if not room.available_quantity %}
+      {% if not room.is_available and not room.room_type.is_under_maintenance %}
       <p class="availability-none">
         {% if room.selected_check_in %}
           Ngày {{ room.selected_check_in|date:"d/m/Y" }} đến
@@ -85,9 +87,9 @@ phòng{% endblock %} {% block customer_content %}
           ₫<small>mỗi đêm</small>{% else %}<small>Liên hệ để biết giá</small>{% endif %}</span
         >
         {% url 'room-detail' room.pk as room_detail_url %}
-        {% if room.selected_check_in %}
+        {% if room.selected_check_in and room.is_available %}
         {% with start=room.selected_check_in|date:'Y-m-d' end=room.selected_check_out|date:'Y-m-d' %}
-        <a class="customer-button secondary" href="{{ room_detail_url }}?check_in={{ start }}&amp;check_out={{ end }}"
+        <a class="customer-button secondary" href="{{ room_detail_url }}?check_in={{ start }}&amp;check_out={{ end }}&amp;room_quantity={{ room.requested_quantity }}"
           >Xem chi tiết</a
         >
         {% endwith %}

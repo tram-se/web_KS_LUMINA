@@ -61,6 +61,7 @@ class CustomerLoginForm(AuthenticationForm):
     username = forms.EmailField(label="Email")
 
     def clean(self):
+        # Kiểm tra ngày tìm kiếm để không nhận ngày quá khứ hoặc trả trước nhận.
         cleaned_data = super(AuthenticationForm, self).clean()
         email = cleaned_data.get("username")
         password = cleaned_data.get("password")
@@ -81,6 +82,7 @@ class CustomerLoginForm(AuthenticationForm):
 
 
 class RoomSearchForm(forms.Form):
+    # Bộ lọc tìm phòng trên trang Customer; dữ liệu được gửi qua query string.
     check_in = forms.DateField(
         label="Ngày nhận phòng",
         required=False,
@@ -90,6 +92,14 @@ class RoomSearchForm(forms.Form):
         label="Ngày trả phòng",
         required=False,
         widget=forms.DateInput(attrs={"type": "date"}),
+    )
+    room_quantity = forms.IntegerField(
+        label="Số lượng phòng",
+        required=False,
+        initial=1,
+        min_value=1,
+        max_value=20,
+        widget=forms.NumberInput(attrs={"min": 1, "max": 20}),
     )
     room_type = forms.ModelChoiceField(
         label="Loại phòng",
@@ -107,6 +117,7 @@ class RoomSearchForm(forms.Form):
     )
 
     def clean(self):
+        # Kiểm tra ngày đặt và bắt buộc xác minh CCCD trước khi tạo Booking.
         cleaned_data = super().clean()
         check_in = cleaned_data.get("check_in")
         check_out = cleaned_data.get("check_out")
@@ -118,6 +129,7 @@ class RoomSearchForm(forms.Form):
 
 
 class BookingRequestForm(forms.Form):
+    # Form đặt phòng và thông tin khách/CCCD dùng trước khi tạo Booking.
     guest_full_name = forms.CharField(label="Họ và tên", max_length=150)
     guest_phone = forms.CharField(label="Số điện thoại", max_length=20)
     guest_id_number = forms.CharField(label="Số CCCD / CMND", max_length=20)
@@ -146,6 +158,10 @@ class BookingRequestForm(forms.Form):
         label="Giờ trả phòng", widget=forms.TimeInput(attrs={"type": "time"}), initial="12:00"
     )
     guest_count = forms.IntegerField(label="Số khách", min_value=1, initial=1)
+    room_quantity = forms.IntegerField(
+        label="Số lượng phòng", min_value=1, max_value=20, initial=1,
+        widget=forms.NumberInput(attrs={"min": 1, "max": 20}),
+    )
     notes = forms.CharField(
         label="Ghi chú cho khách sạn",
         required=False,
@@ -184,6 +200,7 @@ class BookingRequestForm(forms.Form):
         front_image = self.cleaned_data.get("id_card_front_image")
         id_number = re.sub(r"\D", "", cleaned_data.get("guest_id_number", ""))
         if front_image and id_number and not self.errors.get("id_card_front_image"):
+            # Đọc QR CCCD bằng nhiều biến thể ảnh để tăng khả năng nhận diện.
             qr_data = ""
             try:
                 front_image.seek(0)
@@ -226,6 +243,7 @@ class BookingRequestForm(forms.Form):
             except (OSError, ValueError, cv2.error):
                 qr_data = ""
             qr_numbers = re.findall(r"(?<!\d)\d{12}(?!\d)", qr_data or "")
+            # Chỉ chấp nhận booking khi số CCCD trong QR trùng dữ liệu khách nhập.
             if not qr_numbers:
                 self.add_error(
                     "id_card_front_image",

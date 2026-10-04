@@ -47,6 +47,7 @@
         <small>Trả phòng</small><b>{{ booking.check_out|date:"d/m/Y" }} - {{ booking.check_out_time|time:"H:i" }}</b>
       </div>
       <div><small>Số khách</small><b>{{ booking.guest_count }} người</b></div>
+      <div><small>Số lượng phòng</small><b>{{ booking.room_quantity }}</b></div>
       <div>
         <small>Tổng tiền</small><b>{{ booking.total_price|floatformat:0 }} ₫</b>
       </div>
@@ -57,7 +58,7 @@
       </div>
       <div>
         <small>Phòng được gán</small
-        ><b>{{ booking.room.number|default:"Chưa gán" }}</b>
+        ><b>{% for assignment in booking.room_assignments.all %}{{ assignment.room.number }}{% if not forloop.last %}, {% endif %}{% empty %}{{ booking.room.number|default:"Chưa gán" }}{% endfor %}</b>
       </div>
     </div>
     <div class="note-box">

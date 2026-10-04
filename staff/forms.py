@@ -40,7 +40,7 @@ class StaffRegistrationForm(UserCreationForm):
 
 class BookingStatusForm(forms.ModelForm):
     room = forms.ModelChoiceField(
-        label="Số phòng cụ thể", queryset=Room.objects.none(), required=False
+        label="Số phòng cụ thể", queryset=Room.objects.all(), required=False
     )
 
     class Meta:
@@ -55,26 +55,49 @@ class BookingStatusForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
         booking = self.instance
+
         room_queryset = Room.objects.filter(
             room_type__name=booking.room_type,
-            status=Room.Status.AVAILABLE,
+            status__in=[
+                Room.Status.AVAILABLE,
+                Room.Status.DEPOSIT,
+                Room.Status.BOOKED,
+            ],
         )
+
+        # Luôn giữ phòng đã được tự động gán cho booking
+        if booking.room:
+            room_queryset = room_queryset | Room.objects.filter(
+                pk=booking.room.pk
+            )
+
         if booking.check_in and booking.check_out:
             conflicting_booking = Q(
-                bookings__status__in=(Booking.Status.PENDING, Booking.Status.CONFIRMED),
+                bookings__status__in=(
+                    Booking.Status.PENDING,
+                    Booking.Status.CONFIRMED,
+                ),
                 bookings__check_in__lt=booking.check_out,
                 bookings__check_out__gt=booking.check_in,
-            ) & ~Q(bookings__pk=booking.pk)
-            room_queryset = room_queryset.exclude(conflicting_booking)
-        self.fields["room"].queryset = room_queryset.distinct()
+            ) | Q(
+                booking_assignments__booking__status__in=(
+                    Booking.Status.PENDING,
+                    Booking.Status.CONFIRMED,
+                ),
+                booking_assignments__booking__check_in__lt=booking.check_out,
+                booking_assignments__booking__check_out__gt=booking.check_in,
+            )
+            conflicting_booking &= ~Q(bookings__pk=booking.pk)
+            conflicting_booking &= ~Q(booking_assignments__booking__pk=booking.pk)
 
+            room_queryset = room_queryset.exclude(conflicting_booking)
+
+        self.fields["room"].queryset = room_queryset.distinct()
     def clean(self):
         cleaned_data = super().clean()
-        if cleaned_data.get(
-            "status"
-        ) == Booking.Status.CONFIRMED and not cleaned_data.get("room"):
-            self.add_error("room", "Vui lòng chọn số phòng trước khi xác nhận.")
+        
         return cleaned_data
 
 

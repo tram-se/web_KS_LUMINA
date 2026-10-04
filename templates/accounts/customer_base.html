@@ -1,21 +1,27 @@
 {% extends "base.html" %} {% block title %}{% block customer_title %}Khách
 hàng{% endblock %} | Lumina{% endblock %} {% block content %}
 <style>
+  @import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap");
+
   :root {
-    --customer-ink: #16292c;
-    --customer-muted: #718183;
-    --customer-line: #e2e9e6;
-    --customer-paper: #f7faf8;
-    --customer-teal: #126d68;
-    --customer-gold: #d4a552;
+    --customer-ink: #183331;
+    --customer-muted: #6c7c78;
+    --customer-line: #dce7e2;
+    --customer-paper: #f5f8f5;
+    --customer-teal: #0e716b;
+    --customer-teal-dark: #08534f;
+    --customer-gold: #c99b4a;
+    --customer-shadow: 0 18px 45px rgba(24, 51, 49, 0.08);
   }
   body {
     max-width: none;
     margin: 0;
     padding: 0;
-    background: var(--customer-paper);
+    background:
+      radial-gradient(circle at 8% 8%, rgba(201, 155, 74, 0.09), transparent 24rem),
+      var(--customer-paper);
     color: var(--customer-ink);
-    font-family: "Segoe UI", Arial, sans-serif;
+    font-family: "DM Sans", "Segoe UI", sans-serif;
   }
   body > nav {
     display: none;
@@ -24,34 +30,38 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     min-height: 100vh;
   }
   .customer-nav {
-    height: 74px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    min-height: 74px;
     padding: 0 6%;
     display: flex;
     align-items: center;
     gap: 28px;
-    background: #fff;
-    border-bottom: 1px solid var(--customer-line);
+    background: #075b50;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 3px 18px rgba(7, 58, 55, 0.18);
+    backdrop-filter: blur(14px);
   }
   .customer-logo {
     display: flex;
     align-items: center;
     gap: 10px;
-    color: var(--customer-ink);
-    font:
-      700 17px Georgia,
-      serif;
-    letter-spacing: 2px;
+    color: #fff;
+    font: 600 16px "DM Sans", sans-serif;
+    letter-spacing: 3px;
     text-decoration: none;
   }
   .customer-seal {
     display: grid;
     place-items: center;
-    width: 35px;
-    height: 35px;
+    width: 38px;
+    height: 38px;
     border: 1px solid var(--customer-gold);
     border-radius: 50%;
-    color: #b0812d;
-    font: italic 22px Georgia;
+    color: #a2742b;
+    font: italic 23px "Playfair Display", Georgia, serif;
+    box-shadow: inset 0 0 0 4px rgba(201, 155, 74, 0.1);
   }
   .customer-nav-links {
     display: flex;
@@ -59,19 +69,21 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     margin-left: auto;
   }
   .customer-nav-links a {
-    color: var(--customer-muted);
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.78);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
     text-decoration: none;
   }
   .customer-nav-links a:hover {
-    color: var(--customer-teal);
+    color: #fff;
   }
   .customer-profile {
     display: flex;
     align-items: center;
     gap: 9px;
-    color: var(--customer-ink);
-    font-size: 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 11px;
   }
   .customer-avatar {
     display: grid;
@@ -83,23 +95,30 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     color: var(--customer-teal);
     font-weight: bold;
   }
+  .customer-profile a {
+    color: #d6efe3;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .customer-profile a:hover {
+    color: #fff;
+  }
   .customer-content {
-    max-width: 1280px;
+    max-width: 1320px;
     margin: auto;
-    padding: 42px 6% 70px;
+    padding: 52px 6% 86px;
   }
   .customer-kicker {
     margin: 0 0 10px;
     color: var(--customer-teal);
     font-size: 10px;
     font-weight: bold;
-    letter-spacing: 2px;
+    letter-spacing: 2.5px;
   }
   .customer-content h1 {
     margin: 0;
-    font:
-      normal 37px Georgia,
-      serif;
+    font: 500 42px "Playfair Display", Georgia, serif;
+    letter-spacing: -0.5px;
   }
   .customer-subtitle {
     color: var(--customer-muted);
@@ -111,20 +130,32 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 17px;
+    min-height: 42px;
+    padding: 0 18px;
     border: 0;
-    border-radius: 3px;
+    border-radius: 2px;
     background: var(--customer-teal);
     color: #fff;
     text-decoration: none;
     font-size: 12px;
-    font-weight: bold;
+    font-weight: 700;
+    letter-spacing: 0.2px;
     cursor: pointer;
+    transition: transform 180ms ease, background 180ms ease, box-shadow 180ms ease;
+  }
+  .customer-button:hover {
+    background: var(--customer-teal-dark);
+    box-shadow: 0 8px 18px rgba(14, 113, 107, 0.2);
+    transform: translateY(-2px);
   }
   .customer-button.secondary {
     background: #fff;
     border: 1px solid var(--customer-line);
     color: var(--customer-teal);
+  }
+  .customer-button.secondary:hover {
+    background: #eef7f3;
+    box-shadow: none;
   }
   .search-card,
   .room-card,
@@ -132,7 +163,8 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     padding: 22px;
     background: #fff;
     border: 1px solid var(--customer-line);
-    border-radius: 5px;
+    border-radius: 3px;
+    box-shadow: var(--customer-shadow);
   }
   .search-card {
     margin: 28px 0;
@@ -176,7 +208,7 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     overflow: hidden;
   }
   .room-image {
-    height: 185px;
+    height: 210px;
     background: #d9e9e5 center/cover no-repeat;
     display: flex;
     align-items: flex-end;
@@ -187,7 +219,7 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
   }
   .room-image span {
     padding: 5px 8px;
-    border-radius: 12px;
+    border-radius: 2px;
     background: #fff;
     color: var(--customer-teal);
     font-size: 10px;
@@ -199,8 +231,7 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
   .room-body h2 {
     margin: 0 0 7px;
     font:
-      normal 22px Georgia,
-      serif;
+      500 23px "Playfair Display", Georgia, serif;
   }
   .room-meta {
     display: flex;
@@ -225,8 +256,7 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
   .room-price {
     color: var(--customer-teal);
     font:
-      normal 20px Georgia,
-      serif;
+      500 20px "Playfair Display", Georgia, serif;
   }
   .room-price small {
     display: block;
@@ -314,8 +344,7 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
   .booking-card h2 {
     margin: 0 0 18px;
     font:
-      normal 22px Georgia,
-      serif;
+      500 23px "Playfair Display", Georgia, serif;
   }
   .booking-row {
     display: flex;
@@ -395,10 +424,10 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
       display: none;
     }
     .customer-content {
-      padding: 30px 18px;
+      padding: 34px 18px 58px;
     }
     .customer-content h1 {
-      font-size: 30px;
+      font-size: 34px;
     }
     .search-grid {
       grid-template-columns: 1fr 1fr;
@@ -415,6 +444,59 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     .room-detail {
       gap: 12px;
     }
+    
+  }
+</style>
+
+<style>
+  :root {
+    --customer-teal: #147a72;
+    --customer-teal-dark: #0d5b56;
+    --customer-gold: #d09a42;
+    --customer-paper: #f7f9f7;
+    --customer-line: #d8e5e0;
+    --customer-shadow: 0 18px 45px rgba(25, 55, 50, 0.09);
+  }
+  body {
+    background: radial-gradient(circle at 92% 4%, rgba(208, 154, 66, .12), transparent 22rem), var(--customer-paper);
+  }
+  .customer-nav {
+    background: linear-gradient(110deg, #0b4f4a, #147a72 58%, #195f5a);
+    min-height: 78px;
+  }
+  .customer-logo { letter-spacing: 3.5px; }
+  .customer-seal { border-color: #e3b965; color: #e3b965; }
+  .customer-nav-links a { transition: color .18s ease, transform .18s ease; }
+  .customer-nav-links a:hover { transform: translateY(-1px); }
+  .customer-content { padding-top: 58px; }
+  .customer-content h1 { letter-spacing: 0; }
+  .customer-button { min-height: 44px; border-radius: 9px; box-shadow: 0 6px 14px rgba(20, 122, 114, .1); }
+  .customer-button:hover { transform: translateY(-2px); }
+  .customer-button.secondary { border-radius: 9px; }
+  .search-card, .room-card, .booking-card, .booking-panel { border-radius: 14px; box-shadow: var(--customer-shadow); }
+  .search-card { background: rgba(255, 255, 255, .9); }
+  .room-card { transition: transform .2s ease, box-shadow .2s ease; }
+  .room-card:hover { transform: translateY(-4px); box-shadow: 0 22px 42px rgba(25, 55, 50, .14); }
+  .search-grid input:focus, .search-grid select:focus, .booking-form input:focus, .booking-form textarea:focus {
+    outline: 3px solid rgba(20, 122, 114, .13);
+    border-color: var(--customer-teal);
+  }
+  .status-pill { border-radius: 999px; }
+  .booking-panel { background: rgba(255, 255, 255, .94); }
+  .detail-list div { border-bottom-color: #e3ece8; }
+  .table-wrap { border: 1px solid var(--customer-line); border-radius: 12px; overflow-x: auto; background: #fff; }
+  table thead { background: #edf6f2; }
+  table th { color: #35625d; font-size: 10px; letter-spacing: .7px; text-transform: uppercase; }
+  table tbody tr { transition: background .16s ease; }
+  table tbody tr:hover { background: #f4faf7; }
+  .notification-list, .chat-wrapper { border-radius: 14px; box-shadow: var(--customer-shadow); }
+  .floating-chat-box { border-radius: 16px !important; box-shadow: 0 20px 50px rgba(20, 70, 65, .2) !important; overflow: hidden; }
+  @media (max-width: 620px) {
+    .customer-nav { min-height: 68px; }
+    .customer-content { padding-top: 36px; }
+    .customer-nav-links { gap: 12px; }
+    .customer-nav-links a { font-size: 10px; }
+    .payment-card { gap: 18px; }
   }
 </style>
 <div class="customer-shell">
@@ -432,6 +514,17 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
         >{{ customer_user.full_name|first|upper }}</span
       >
       <span>{{ customer_user.full_name }}</span>
+      <a href="{% url 'customer-notifications' %}" title="Thông báo">
+        🔔
+        {% if unread_notifications %}
+          <b style="
+            color: #ff0000;
+            font-weight: 700;
+            font-size: 14px;
+            margin-left: 3px;
+          ">{{ unread_notifications }}</b>
+        {% endif %}
+      </a>
       <a href="{% url 'customer-profile' %}">Tài khoản</a>
       <a href="{% url 'logout' %}">Thoát</a>
       {% else %}
@@ -446,4 +539,607 @@ hàng{% endblock %} | Lumina{% endblock %} {% block content %}
     {% endfor %}{% block customer_content %}{% endblock %}
   </main>
 </div>
+<!-- ================= CHAT WIDGET NỔI ĐÈ LÊN TẤT CẢ CÁC TRANG ================= -->
+<style>
+  /* Nút bong bóng Chat nổi ở góc dưới bên phải */
+  .floating-chat-toggle {
+    position: fixed !important;
+    right: 24px !important;
+    bottom: 24px !important;
+    width: 60px !important;
+    height: 60px !important;
+    border-radius: 50% !important;
+    background: var(--customer-teal, #087d73) !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25) !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 999999 !important;
+    transition: transform 0.2s ease, background 0.2s ease !important;
+  }
+
+  .floating-chat-toggle:hover {
+    transform: scale(1.08) !important;
+    background: #06635b !important;
+  }
+
+  .floating-chat-toggle svg {
+    width: 28px !important;
+    height: 28px !important;
+    fill: none !important;
+    stroke: #ffffff !important;
+    stroke-width: 2 !important;
+  }
+
+  /* Badge chấm đỏ thông báo chưa đọc */
+  .floating-chat-badge {
+    position: absolute !important;
+    top: -2px !important;
+    right: -2px !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 50% !important;
+    background: #e53935 !important;
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border: 2px solid #ffffff !important;
+  }
+
+  /* Khung Chat nổi Messenger */
+  .floating-chat-box {
+    position: fixed !important;
+    right: 24px !important;
+    bottom: 95px !important;
+    width: 370px !important;
+    max-width: calc(100vw - 32px) !important;
+    height: 500px !important;
+    max-height: calc(100vh - 120px) !important;
+    background: #ffffff !important;
+    border-radius: 16px !important;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 999999 !important;
+    overflow: hidden !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+    
+    /* Mặc định ẩn, bấm nút mới bật lên */
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px) scale(0.95);
+    transition: all 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+  }
+
+  /* Trạng thái mở khung chat */
+  .floating-chat-box.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) scale(1) !important;
+  }
+
+  /* Header Chat */
+  .chat-box-header {
+    background: var(--customer-teal, #087d73) !important;
+    color: #ffffff !important;
+    padding: 14px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .chat-box-profile {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+  }
+
+  .chat-box-avatar {
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    color: var(--customer-teal, #087d73) !important;
+    font-weight: bold !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 15px !important;
+  }
+
+  .chat-box-title {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    margin: 0 !important;
+    color: #ffffff !important;
+  }
+
+  .chat-box-status {
+    font-size: 11px !important;
+    opacity: 0.9 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+    color: #ffffff !important;
+  }
+
+  .status-dot-green {
+    width: 7px !important;
+    height: 7px !important;
+    background-color: #2eb82e !important;
+    border-radius: 50% !important;
+    display: inline-block !important;
+  }
+
+  .chat-box-close {
+    background: none !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-size: 22px !important;
+    cursor: pointer !important;
+    padding: 0 4px !important;
+    line-height: 1 !important;
+    opacity: 0.8;
+  }
+
+  .chat-box-close:hover {
+    opacity: 1;
+  }
+
+  /* Thân nội dung Chat */
+  .chat-box-body {
+    flex: 1 !important;
+    padding: 16px !important;
+    overflow-y: auto !important;
+    background-color: #f7faf9 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .chat-msg {
+    display: flex !important;
+    flex-direction: column !important;
+    max-width: 82% !important;
+  }
+
+  .chat-msg.incoming {
+    align-self: flex-start !important;
+  }
+
+  .chat-msg.incoming .msg-bubble {
+    background: #ffffff !important;
+    color: #1c252e !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 16px 16px 16px 4px !important;
+  }
+
+  .chat-msg.outgoing {
+    align-self: flex-end !important;
+  }
+
+  .chat-msg.outgoing .msg-bubble {
+    background: var(--customer-teal, #087d73) !important;
+    color: #ffffff !important;
+    border-radius: 16px 16px 4px 16px !important;
+  }
+
+  .msg-bubble {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    word-break: break-word !important;
+  }
+
+  .msg-time {
+    font-size: 10px !important;
+    color: #94a3b8 !important;
+    margin-top: 3px !important;
+  }
+
+  .chat-msg.incoming .msg-time { align-self: flex-start !important; }
+  .chat-msg.outgoing .msg-time { align-self: flex-end !important; }
+
+  /* Quick Suggestion Chips */
+  .chat-quick-chips {
+    display: flex !important;
+    gap: 6px !important;
+    padding: 8px 12px !important;
+    background: #f8fafc !important;
+    border-top: 1px solid #edf2f7 !important;
+    overflow-x: auto !important;
+    white-space: nowrap !important;
+    scrollbar-width: thin !important;
+  }
+  .chat-quick-chips::-webkit-scrollbar {
+    height: 4px;
+  }
+  .chat-quick-chips::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  .chip-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 16px !important;
+    padding: 5px 10px !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    flex-shrink: 0 !important;
+  }
+  .chip-btn:hover {
+    background: #087d73 !important;
+    color: #ffffff !important;
+    border-color: #087d73 !important;
+  }
+  .chip-btn.chip-staff {
+    border-color: #f59e0b !important;
+    color: #d97706 !important;
+    background: #fffbeb !important;
+  }
+  .chip-btn.chip-staff:hover {
+    background: #f59e0b !important;
+    color: #ffffff !important;
+  }
+
+  /* Footer Nhập Tin Nhắn */
+  .chat-box-footer {
+    padding: 10px 12px !important;
+    background: #ffffff !important;
+    border-top: 1px solid #edf2f7 !important;
+  }
+
+  .chat-form {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .chat-input-field {
+    flex: 1 !important;
+    border: 1px solid #cbd5e1 !important;
+    border-radius: 20px !important;
+    padding: 8px 14px !important;
+    font-size: 13px !important;
+    outline: none !important;
+  }
+
+  .chat-input-field:focus {
+    border-color: var(--customer-teal, #087d73) !important;
+  }
+
+  .chat-submit-btn {
+    background: var(--customer-teal, #087d73) !important;
+    color: #ffffff !important;
+    border: none !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+  }
+
+  @media (max-width: 480px) {
+    .floating-chat-box {
+      right: 12px !important;
+      bottom: 85px !important;
+      width: calc(100vw - 24px) !important;
+    }
+  }
+</style>
+
+<!-- 1. NÚT BẤM BẬT/TẮT CHAT NỔI Ở GÓC DƯỚI BÊN PHẢI -->
+<button class="floating-chat-toggle" id="toggleChatBtn" aria-label="Mở khung hỗ trợ">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7A8.38 8.38 0 0 1 4 11.5a8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+  </svg>
+  <span class="floating-chat-badge">1</span>
+</button>
+
+<!-- 2. KHUNG CHAT MESSENGER NỔI DẠNG POPUP ĐÈ LÊN MỌI TRANG -->
+<div class="floating-chat-box" id="floatingChatBox">
+  <!-- Header -->
+  <div class="chat-box-header">
+    <div class="chat-box-profile">
+      <div class="chat-box-avatar" id="chatAvatar">🤖</div>
+      <div>
+        <div class="chat-box-title" id="chatTitle">Lumina Support</div>
+        <div class="chat-box-status" id="chatStatus">
+          <span class="status-dot-green"></span> 🤖 Chatbot tự động
+        </div>
+      </div>
+    </div>
+    <button class="chat-box-close" id="closeChatBtn">&times;</button>
+  </div>
+
+  <!-- Body Chat -->
+  <div class="chat-box-body" id="chatBoxBody">
+    <div class="chat-msg incoming">
+      <div class="msg-bubble">
+        Xin chào! 👋 Em là <strong>Lumina Chatbot tự động 🤖</strong>. Quý khách cần em hỗ trợ thông tin giá phòng, tiện ích hay kiểm tra phòng trống hôm nay ạ?
+      </div>
+      <span class="msg-time">Vừa xong</span>
+    </div>
+  </div>
+
+  <!-- Quick Suggestion Chips -->
+  <div class="chat-quick-chips" id="chatQuickChips">
+    <button type="button" class="chip-btn" data-msg="Giá phòng bao nhiêu?">💰 Bảng giá phòng</button>
+    <button type="button" class="chip-btn" data-msg="Ngày 20/9 còn phòng không?">🔍 Kiểm tra phòng trống</button>
+    <button type="button" class="chip-btn" data-msg="Phòng nào có ban công?">🌿 Phòng có ban công</button>
+    <button type="button" class="chip-btn" data-msg="Địa chỉ và Giờ nhận phòng?">📍 Địa chỉ & Giờ nhận</button>
+    <button type="button" class="chip-btn chip-staff" data-msg="Cho tôi gặp nhân viên tư vấn">👨‍💼 Gặp nhân viên tư vấn</button>
+  </div>
+
+  <!-- Footer Input -->
+  <div class="chat-box-footer">
+    <form class="chat-form" id="chatMsgForm" onsubmit="return false;">
+      <input type="text" class="chat-input-field" placeholder="Nhập tin nhắn..." id="chatMsgInput" autocomplete="off">
+      <button type="submit" class="chat-submit-btn" aria-label="Gửi">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="#ffffff">
+          <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+        </svg>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- SCRIPT XỬ LÝ ẨN/HIỆN VÀ GỬI TIN NHẮN -->
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const toggleBtn = document.getElementById("toggleChatBtn");
+    const closeBtn = document.getElementById("closeChatBtn");
+    const chatBox = document.getElementById("floatingChatBox");
+    const chatForm = document.getElementById("chatMsgForm");
+    const chatInput = document.getElementById("chatMsgInput");
+    const chatBody = document.getElementById("chatBoxBody");
+    const chatAvatar = document.getElementById("chatAvatar");
+    const chatStatus = document.getElementById("chatStatus");
+    const quickChips = document.getElementById("chatQuickChips");
+
+    let loadedMsgIds = new Set();
+    let pollInterval = null;
+
+    function updateChatModeStatus(mode) {
+      if (mode === "STAFF") {
+        if (chatAvatar) chatAvatar.textContent = "👨‍💼";
+        if (chatStatus) {
+          chatStatus.innerHTML = '<span class="status-dot-green"></span> 👨‍💼 Nhân viên hỗ trợ';
+        }
+      } else {
+        if (chatAvatar) chatAvatar.textContent = "🤖";
+        if (chatStatus) {
+          chatStatus.innerHTML = '<span class="status-dot-green"></span> 🤖 Chatbot tự động';
+        }
+      }
+    }
+
+    function renderMessages(messages) {
+      if (!messages || messages.length === 0) return;
+
+      let shouldScroll = false;
+      messages.forEach(msg => {
+        if (!loadedMsgIds.has(msg.id)) {
+          loadedMsgIds.add(msg.id);
+          shouldScroll = true;
+
+          const msgDiv = document.createElement("div");
+          msgDiv.className = "chat-msg " + (msg.is_from_customer ? "outgoing" : "incoming");
+          msgDiv.innerHTML = `
+            <div class="msg-bubble">${formatMessageText(msg.message)}</div>
+            <span class="msg-time">${escapeHtml(msg.time_short || msg.created_at)}</span>
+          `;
+          chatBody.appendChild(msgDiv);
+        }
+      });
+
+      if (shouldScroll) {
+        chatBody.scrollTop = chatBody.scrollHeight;
+      }
+    }
+
+    function fetchChatHistory() {
+      fetch("/api/get-chat/")
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === "ok") {
+            if (data.room_mode) {
+              updateChatModeStatus(data.room_mode);
+            }
+            if (data.messages) {
+              renderMessages(data.messages);
+            }
+          }
+        })
+        .catch(err => console.error("Lỗi tải tin nhắn:", err));
+    }
+
+    function sendMessageText(text) {
+      if (!text) return;
+      
+      fetch("/api/send-chat/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken")
+        },
+        body: JSON.stringify({ message: text })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.status === "ok") {
+          if (data.room_mode) {
+            updateChatModeStatus(data.room_mode);
+          }
+          if (data.messages) {
+            renderMessages(data.messages);
+          }
+          fetchChatHistory();
+        } else {
+          console.error("Gửi tin nhắn thất bại:", data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Lỗi khi gửi tin nhắn:", error);
+      });
+    }
+
+    // Tải tin nhắn lần đầu khi khởi tạo
+    fetchChatHistory();
+
+    // Event listener cho Quick Chips
+    if (quickChips) {
+      quickChips.addEventListener("click", function(e) {
+        const btn = e.target.closest(".chip-btn");
+        if (btn) {
+          const msg = btn.getAttribute("data-msg");
+          if (msg) {
+            sendMessageText(msg);
+          }
+        }
+      });
+    }
+
+    // Toggle bật/tắt Popup
+    toggleBtn.addEventListener("click", function() {
+      chatBox.classList.toggle("active");
+      if (chatBox.classList.contains("active")) {
+        chatInput.focus();
+        fetchChatHistory();
+        chatBody.scrollTop = chatBody.scrollHeight;
+
+        if (!pollInterval) {
+          pollInterval = setInterval(fetchChatHistory, 3000);
+        }
+      } else {
+        if (pollInterval) {
+          clearInterval(pollInterval);
+          pollInterval = null;
+        }
+      }
+    });
+
+    closeBtn.addEventListener("click", function() {
+      chatBox.classList.remove("active");
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    });
+
+    // Xử lý gửi tin nhắn từ ô Input
+    chatForm.addEventListener("submit", function(e) {
+      e.preventDefault();
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      chatInput.value = "";
+      sendMessageText(text);
+    });
+
+    // Hàm đọc Cookie lấy CSRF Token cho Django
+    function getCookie(name) {
+      let cookieValue = null;
+      if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.substring(0, name.length + 1) === (name + '=')) {
+            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+            break;
+          }
+        }
+      }
+      return cookieValue;
+    }
+
+    function escapeHtml(string) {
+      return String(string).replace(/[&<>"']/g, function(s) {
+        return {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        }[s];
+      });
+    }
+
+    function buildHtmlTable(rows) {
+      if (!rows || rows.length === 0) return "";
+      let html = '<div style="overflow-x:auto; margin: 8px 0;"><table style="width:100%; border-collapse:collapse; font-size:11px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; font-family:sans-serif;">';
+      // Header
+      html += '<thead><tr style="background:#f1f5f9; color:#0f172a;">';
+      rows[0].forEach(cell => {
+        html += `<th style="padding:6px 8px; border:1px solid #cbd5e1; text-align:left; font-weight:bold;">${cell}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+      // Body
+      for (let r = 1; r < rows.length; r++) {
+        html += `<tr style="${r % 2 === 0 ? 'background:#f8fafc;' : ''}">`;
+        rows[r].forEach(cell => {
+          html += `<td style="padding:6px 8px; border:1px solid #cbd5e1;">${cell}</td>`;
+        });
+        html += '</tr>';
+      }
+      html += '</tbody></table></div>';
+      return html;
+    }
+
+    function formatMessageText(text) {
+      if (!text) return "";
+      let esc = escapeHtml(text);
+
+      const lines = esc.split("\n");
+      let inTable = false;
+      let htmlLines = [];
+      let tableRows = [];
+
+      for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trim();
+        if (line.startsWith("|") && line.endsWith("|")) {
+          if (!inTable) {
+            inTable = true;
+            tableRows = [];
+          }
+          if (line.replace(/[\s|:-]/g, "") === "") {
+            continue;
+          }
+          const cells = line.split("|").slice(1, -1).map(c => c.trim());
+          tableRows.push(cells);
+        } else {
+          if (inTable) {
+            htmlLines.push(buildHtmlTable(tableRows));
+            inTable = false;
+            tableRows = [];
+          }
+          htmlLines.push(line);
+        }
+      }
+      if (inTable) {
+        htmlLines.push(buildHtmlTable(tableRows));
+      }
+
+      let result = htmlLines.join("\n");
+      result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      result = result.replace(/\n/g, '<br>');
+      return result;
+    }
+  });
+</script>
+<!-- ================= END CHAT WIDGET ================= -->
 {% endblock %}

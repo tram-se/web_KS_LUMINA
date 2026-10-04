@@ -112,7 +112,9 @@ room.room_type.name }}{% endblock %} {% block customer_content %}
       ><span>♙ Tối đa {{ room.room_type.max_guests }} khách</span
       ><span>◫ {{ room.room_type.area_sqm }}m²</span>
     </div>
-    <p>Còn lại: {{ room.available_quantity }} phòng</p>
+    {% if room.room_type.is_under_maintenance %}
+    <p class="availability-none">Hạng phòng đang được sửa chữa.</p>
+    {% else %}<p>{% if room.is_available %}Phòng {{ room.number }} đang trống{% else %}Phòng {{ room.number }} không trống theo ngày đã chọn{% endif %}</p>{% endif %}
     <p class="customer-subtitle">
       {{ room.room_type.description|default:"Một không gian nghỉ dưỡng tinh tế với đầy đủ tiện nghi cho kỳ nghỉ của bạn." }}
     </p>
@@ -129,7 +131,9 @@ room.room_type.name }}{% endblock %} {% block customer_content %}
       ><span>Giá tham khảo mỗi đêm</span>
     </div>
     <h2>Gửi yêu cầu đặt phòng</h2>
-    {% if customer_user %}{% if room.available_quantity %}
+    {% if customer_user %}{% if room.room_type.is_under_maintenance %}
+    <button class="customer-button" type="button" disabled>Đang sửa chữa</button>
+    {% elif room.is_available %}
     <form class="booking-form" method="post" enctype="multipart/form-data">
       {% csrf_token %}{% if form.non_field_errors %}
       <ul class="form-errors">

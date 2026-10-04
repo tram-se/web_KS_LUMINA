@@ -6,6 +6,7 @@ from PIL import Image
 
 
 def compress_image(uploaded_file, max_size=2 * 1024 * 1024):
+    # Nén ảnh tải lên trước khi lưu để giảm dung lượng CSDL/media.
     image = Image.open(uploaded_file)
     image = image.convert("RGB")
     image.thumbnail((2400, 2400), Image.Resampling.LANCZOS)
@@ -22,6 +23,7 @@ def compress_image(uploaded_file, max_size=2 * 1024 * 1024):
 
 
 class RoomType(models.Model):
+    # Lưu thông tin chung của một hạng phòng, ví dụ Deluxe hoặc Couple.
     class ListingStatus(models.TextChoices):
         PENDING = "PENDING", "Chờ duyệt"
         PUBLISHED = "PUBLISHED", "Đã duyệt"
@@ -40,6 +42,11 @@ class RoomType(models.Model):
         verbose_name="Tiện nghi",
     )
     is_active = models.BooleanField("Đang kinh doanh", default=True)
+    is_under_maintenance = models.BooleanField(
+        "Đang sửa chữa",
+        default=False,
+        help_text="Bật để tạm ngừng nhận đặt phòng cho toàn bộ hạng phòng này.",
+    )
     listing_status = models.CharField(
         "Trạng thái đăng bán",
         max_length=20,
@@ -70,6 +77,7 @@ class RoomType(models.Model):
 
 
 class RoomImage(models.Model):
+    # Lưu nhiều ảnh gallery thuộc cùng một hạng phòng.
     room_type = models.ForeignKey(
         RoomType,
         on_delete=models.CASCADE,
@@ -85,14 +93,17 @@ class RoomImage(models.Model):
         verbose_name_plural = "Ảnh phòng"
 
     def save(self, *args, **kwargs):
+        # Chuẩn hóa và nén ảnh gallery trước khi ghi vào storage.
         if self.image:
             self.image = compress_image(self.image)
         super().save(*args, **kwargs)
 
 
 class Room(models.Model):
+    # Lưu từng phòng vật lý có số phòng, tầng và trạng thái vận hành.
     class Status(models.TextChoices):
         AVAILABLE = "AVAILABLE", "Còn trống"
+        DEPOSIT = "DEPOSIT", "Đang đặt cọc"
         BOOKED = "BOOKED", "Đã đặt"
         OCCUPIED = "OCCUPIED", "Đang sử dụng"
         MAINTENANCE = "MAINTENANCE", "Đang bảo trì"
@@ -124,6 +135,7 @@ class Room(models.Model):
 
 
 class RoomPrice(models.Model):
+    # Lưu lịch sử giá theo thời gian để tìm đúng giá tại ngày nhận phòng.
     class Unit(models.TextChoices):
         NIGHT = "NIGHT", "Theo đêm"
         HOUR = "HOUR", "Theo giờ"
@@ -153,6 +165,7 @@ class RoomPrice(models.Model):
 
 
 class Amenity(models.Model):
+    # Danh mục tiện nghi có thể gắn cho nhiều hạng phòng.
     name = models.CharField("Tên tiện nghi", max_length=120, unique=True)
     description = models.CharField("Mô tả", max_length=255, blank=True)
     is_active = models.BooleanField("Đang cung cấp", default=True)
@@ -167,6 +180,7 @@ class Amenity(models.Model):
 
 
 class Service(models.Model):
+    # Danh mục dịch vụ phụ trợ mà khách sạn cung cấp.
     name = models.CharField("Tên dịch vụ", max_length=120, unique=True)
     description = models.TextField("Mô tả", blank=True)
     price = models.DecimalField("Giá niêm yết", max_digits=12, decimal_places=0)
@@ -183,6 +197,7 @@ class Service(models.Model):
 
 
 class ActivityLog(models.Model):
+    # Nhật ký hành động của Admin/Staff để truy vết thao tác quản trị.
     class Level(models.TextChoices):
         INFO = "INFO", "Thông tin"
         WARNING = "WARNING", "Cảnh báo"

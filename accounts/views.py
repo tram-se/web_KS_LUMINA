@@ -6,29 +6,28 @@ from datetime import date
 from io import BytesIO
 from pathlib import Path
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import authenticate
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.conf import settings
-from django.core.files.storage import default_storage
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.cache import never_cache
-from django.views.decorators.csrf import ensure_csrf_cookie
-from django.views.decorators.csrf import csrf_exempt
-from django.shortcuts import redirect, render
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
+
 import qrcode
 import requests
+from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from reportlab.lib import colors
+from urllib.parse import urlencode
 
 from admin_panel.models import Room, RoomPrice, RoomType
 
@@ -41,10 +40,38 @@ from .forms import (
     PaymentProofForm,
     RoomSearchForm,
 )
-from .models import Booking, CheckInRequest, User
+from .models import (
+    Booking,
+    BookingRoom,
+    ChatMessage,
+    ChatRoom,
+    CheckInRequest,
+    ConsultationRequest,
+    Notification,
+    User,
+)
+from .services import mark_booking_paid
 
 
+def _public_absolute_url(request, path):
+    if settings.PUBLIC_BASE_URL:
+        return f"{settings.PUBLIC_BASE_URL}/{path.lstrip('/')}"
+    return request.build_absolute_uri(path)
+
+
+def _branded_qr_png(data, color="#8f111b"):
+    qr = qrcode.QRCode(
+        error_correction=qrcode.constants.ERROR_CORRECT_M,
+        box_size=12,
+        border=4,
+    )
+    qr.add_data(data)
+    qr.make(fit=True)
+    return qr.make_image(fill_color=color, back_color="#ffffff")
+
+# Tìm giá phòng đang áp dụng theo ngày nhận phòng
 def _room_price(room_type, check_in=None):
+    # Tìm mức giá đang hiệu lực tại ngày nhận phòng.
     price_date = check_in or date.today()
     return (
         RoomPrice.objects.filter(
@@ -57,42 +84,72 @@ def _room_price(room_type, check_in=None):
         .first()
     )
 
-
+# lọc ra các phòng có thể đặt trong khoảng ngày check-in/check-out
 def _available_rooms(check_in=None, check_out=None):
     rooms = Room.objects.select_related("room_type").filter(
         room_type__is_active=True,
         room_type__listing_status=RoomType.ListingStatus.PUBLISHED,
+        room_type__is_under_maintenance=False,
     )
+
     if check_in and check_out:
-        rooms = rooms.filter(status=Room.Status.AVAILABLE).exclude(
-            bookings__status=Booking.Status.CANCELLED,
-            bookings__check_in__lt=check_out,
-            bookings__check_out__gt=check_in,
+        overlap = (
+            Q(bookings__check_in__lt=check_out, bookings__check_out__gt=check_in)
+            | Q(
+                booking_assignments__booking__check_in__lt=check_out,
+                booking_assignments__booking__check_out__gt=check_in,
+            )
+        ) & ~Q(bookings__status=Booking.Status.CANCELLED) & ~Q(
+            booking_assignments__booking__status=Booking.Status.CANCELLED
         )
+
+        rooms = rooms.filter(
+            status__in=[
+                Room.Status.AVAILABLE,
+                Room.Status.DEPOSIT,
+                Room.Status.BOOKED,
+            ]
+        ).exclude(overlap)
     else:
         rooms = rooms.filter(status=Room.Status.AVAILABLE)
+
     return rooms.distinct()
 
-
+# đếm số lương phòng trống của hạng phòng trong khoảng ngày check-in/check-out
 def _available_quantity(room_type, check_in=None, check_out=None):
-    """Count rooms without a non-cancelled booking overlapping the requested stay."""
+    if room_type.is_under_maintenance:
+        return 0
+
     if not check_in or not check_out:
         check_in = date.today()
         check_out = date.today()
 
-    overlap = Q(
-        bookings__check_in__lt=check_out,
-        bookings__check_out__gt=check_in,
-    ) & ~Q(bookings__status=Booking.Status.CANCELLED)
+    overlap = (
+        Q(bookings__check_in__lt=check_out, bookings__check_out__gt=check_in)
+        | Q(
+            booking_assignments__booking__check_in__lt=check_out,
+            booking_assignments__booking__check_out__gt=check_in,
+        )
+    ) & ~Q(bookings__status=Booking.Status.CANCELLED) & ~Q(
+        booking_assignments__booking__status=Booking.Status.CANCELLED
+    )
+
     return (
-        Room.objects.filter(room_type=room_type, status=Room.Status.AVAILABLE)
+        Room.objects.filter(
+            room_type=room_type,
+            status__in=[
+                Room.Status.AVAILABLE,
+                Room.Status.DEPOSIT,
+                Room.Status.BOOKED,
+            ],
+        )
         .exclude(overlap)
         .distinct()
         .count()
     )
 
-
-def _next_url(request, default="/customer/"):
+# Xác định trang cần chuyển tới sau đăng nhập/đăng ký và chống redirect không an toàn
+def _next_url(request, default="/"):
     target = request.POST.get("next") or request.GET.get("next") or default
     if url_has_allowed_host_and_scheme(
         target,
@@ -102,7 +159,7 @@ def _next_url(request, default="/customer/"):
         return target
     return default
 
-
+#đăng nhập khách hàng, xác thực role và active, lưu session và chuyển hướng
 @never_cache
 @ensure_csrf_cookie
 def customer_login(request):
@@ -125,7 +182,7 @@ def customer_login(request):
         },
     )
 
-
+#đăng ký khách hàng, lưu session và chuyển hướng
 @never_cache
 @ensure_csrf_cookie
 def register(request):
@@ -142,7 +199,7 @@ def register(request):
         {"form": form, "next_url": _next_url(request)},
     )
 
-
+#Phân quyền và điều hướng Admin / Staff / Customer
 def dashboard(request):
     if request.user.is_authenticated and request.user.role == User.Role.ADMIN:
         return redirect("admin-home")
@@ -152,7 +209,7 @@ def dashboard(request):
         return redirect("customer-home")
     return redirect("login")
 
-
+# Trang chủ khách hàng, hiển thị phòng, giá, số lượng và booking gần đây
 def customer_home(request):
     recent_bookings = []
     if request.customer_user is not None:
@@ -176,10 +233,14 @@ def customer_home(request):
     return render(
         request,
         "accounts/customer_home.html",
-        {"recent_bookings": recent_bookings, "room_types": room_types},
+        {
+            "recent_bookings": recent_bookings,
+            "room_types": room_types,
+            "search_form": RoomSearchForm(),
+        },
     )
 
-
+# trang chi tiết booking của khách, hiển thị thông tin phòng, ngày ở, giá và trạng thái thanh toán
 @customer_required
 def customer_booking_detail(request, booking_id):
     booking = get_object_or_404(
@@ -192,7 +253,7 @@ def customer_booking_detail(request, booking_id):
         request, "accounts/booking_detail.html", {"booking": booking, "nights": nights}
     )
 
-
+# Xử lý thanh toán – gửi biên lai hoặc tạo giao dịch MoMo
 @customer_required
 def booking_payment(request, booking_id):
     booking = get_object_or_404(
@@ -210,77 +271,146 @@ def booking_payment(request, booking_id):
                 update_fields=("payment_reference", "payment_proof", "payment_status", "updated_at")
             )
             messages.success(request, "Đã gửi biên lai. Nhân viên sẽ kiểm tra và xác nhận thanh toán.")
-            return redirect("customer-booking-detail", booking_id=booking.pk)
-        if not all((settings.MOMO_PARTNER_CODE, settings.MOMO_ACCESS_KEY, settings.MOMO_SECRET_KEY)):
-            pass
-        else:
-            messages.info(request, "Để thanh toán tự động, hãy dùng MoMo Merchant API.")
-        order_id = f"{booking.booking_code}-{uuid.uuid4().hex[:8].upper()}"
-        request_id = uuid.uuid4().hex
-        return_url = settings.MOMO_RETURN_URL or request.build_absolute_uri(
-            reverse("booking-payment-result", kwargs={"booking_id": booking.pk})
-        )
-        ipn_url = settings.MOMO_IPN_URL or request.build_absolute_uri(reverse("momo-ipn"))
-        order_info = f"Thanh toan {booking.booking_code}"
-        raw_signature = (
-            f"accessKey={settings.MOMO_ACCESS_KEY}&amount={int(booking.total_price)}"
-            f"&extraData={booking.pk}&ipnUrl={ipn_url}&orderId={order_id}"
-            f"&orderInfo={order_info}&partnerCode={settings.MOMO_PARTNER_CODE}"
-            f"&redirectUrl={return_url}&requestId={request_id}&requestType=captureWallet"
-        )
-        signature = hmac.new(settings.MOMO_SECRET_KEY.encode(), raw_signature.encode(), hashlib.sha256).hexdigest()
-        payload = {
-            "partnerCode": settings.MOMO_PARTNER_CODE,
-            "requestId": request_id,
-            "amount": int(booking.total_price),
-            "orderId": order_id,
-            "orderInfo": order_info,
-            "redirectUrl": return_url,
-            "ipnUrl": ipn_url,
-            "lang": "vi",
-            "extraData": str(booking.pk),
-            "requestType": "captureWallet",
-            "signature": signature,
-        }
-        try:
-            momo_response = requests.post(settings.MOMO_API_URL, json=payload, timeout=30).json()
-        except (requests.RequestException, ValueError):
-            messages.error(request, "Không thể kết nối MoMo. Vui lòng thử lại.")
             return redirect("booking-payment", booking_id=booking.pk)
-        if momo_response.get("resultCode") != 0 or not momo_response.get("payUrl"):
-            messages.error(request, momo_response.get("message", "MoMo từ chối tạo giao dịch."))
-            return redirect("booking-payment", booking_id=booking.pk)
-        booking.momo_order_id = order_id
-        booking.momo_request_id = request_id
-        booking.payment_status = Booking.PaymentStatus.PENDING
-        booking.save(update_fields=("momo_order_id", "momo_request_id", "payment_status", "updated_at"))
-        return redirect(momo_response["payUrl"])
     payment_text = f"LUMINA {booking.booking_code}"
-    qr_data = (
-        f"https://img.vietqr.io/image/{settings.PAYMENT_BANK_ID}-"
-        f"{settings.PAYMENT_BANK_ACCOUNT}-compact2.png?amount={int(booking.total_price)}"
-        f"&addInfo={payment_text.replace(' ', '%20')}&accountName={settings.PAYMENT_BANK_ACCOUNT_NAME.replace(' ', '%20')}"
-    )
-    momo_qr_url = None
-    if default_storage.exists(settings.MOMO_QR_IMAGE):
-        momo_qr_url = default_storage.url(settings.MOMO_QR_IMAGE)
     return render(
         request,
         "accounts/booking_payment.html",
         {
             "booking": booking,
             "payment_text": payment_text,
-            "qr_data": qr_data,
-            "momo_qr_url": momo_qr_url,
-            "proof_form": proof_form,
         },
     )
 
 
+@customer_required
+def booking_payment_qr(request, booking_id):
+    booking = get_object_or_404(
+        Booking,
+        pk=booking_id,
+        customer=request.customer_user,
+    )
+    scan_url = _public_absolute_url(
+        request,
+        f"{reverse('payment-qr-scan', kwargs={'token': booking.qr_token})}?{urlencode({'booking': booking.booking_code, 'amount': int(booking.total_price)})}",
+    )
+    image = _branded_qr_png(scan_url, color="#b42332")
+    output = BytesIO()
+    image.save(output, format="PNG")
+    response = HttpResponse(output.getvalue(), content_type="image/png")
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def payment_qr_scan(request, token):
+    try:
+        token = uuid.UUID(token)
+    except (ValueError, TypeError, AttributeError):
+        return render(
+            request,
+            "accounts/payment_scan_result.html",
+            {"error": "Mã thanh toán không hợp lệ."},
+            status=404,
+        )
+    booking = Booking.objects.filter(qr_token=token).first()
+    if booking is None:
+        return render(
+            request,
+            "accounts/payment_scan_result.html",
+            {"error": "Không tìm thấy booking."},
+            status=404,
+        )
+    if booking.status == Booking.Status.CANCELLED:
+        return render(
+            request,
+            "accounts/payment_scan_result.html",
+            {"error": "Booking đã bị hủy."},
+            status=400,
+        )
+    if (
+        request.GET.get("booking") != booking.booking_code
+        or request.GET.get("amount") != str(int(booking.total_price))
+    ):
+        return render(
+            request,
+            "accounts/payment_scan_result.html",
+            {"error": "Thông tin QR không khớp với booking hoặc số tiền."},
+            status=400,
+        )
+    mark_booking_paid(booking.pk, f"SIM-{booking.booking_code}")
+    return render(
+        request,
+        "accounts/payment_scan_result.html",
+        {"booking": Booking.objects.get(pk=booking.pk)},
+    )
+
+# trang kết quả thanh toán MoMo, chuyển hướng về chi tiết booking
 def booking_payment_result(request, booking_id):
     return redirect("customer-booking-detail", booking_id=booking_id)
 
 
+@customer_required
+def booking_payment_status(request, booking_id):
+    booking = get_object_or_404(
+        Booking.objects.only("payment_status", "status"),
+        pk=booking_id,
+        customer=request.customer_user,
+    )
+    return JsonResponse(
+        {
+            "payment_status": booking.payment_status,
+            "booking_status": booking.status,
+            "paid": booking.payment_status == Booking.PaymentStatus.PAID,
+        }
+    )
+
+
+@csrf_exempt
+def bank_payment_webhook(request):
+    if request.method != "POST":
+        return HttpResponse(status=405)
+    configured_token = settings.PAYMENT_WEBHOOK_TOKEN
+    authorization = request.headers.get("Authorization", "")
+    supplied_token = request.headers.get("X-Webhook-Token", "")
+    if authorization.lower().startswith("bearer "):
+        supplied_token = authorization[7:].strip()
+    if not configured_token:
+        return JsonResponse({"ok": False, "error": "Webhook is not configured"}, status=503)
+    if not hmac.compare_digest(configured_token, supplied_token):
+        return HttpResponse(status=403)
+    try:
+        payload = json.loads(request.body)
+        amount = int(payload.get("transferAmount", payload.get("amount", 0)))
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return JsonResponse({"ok": False, "error": "Invalid payload"}, status=400)
+
+    content = " ".join(
+        str(payload.get(key, ""))
+        for key in ("content", "description", "transferDescription", "orderInfo")
+    ).upper()
+    booking = Booking.objects.filter(booking_code__iexact=content).first()
+    if booking is None:
+        booking_code = next(
+            (code for code in content.split() if code.startswith("BK-")), None
+        )
+        booking = Booking.objects.filter(booking_code__iexact=booking_code).first()
+    if booking is None or booking.status == Booking.Status.CANCELLED:
+        return JsonResponse({"ok": False, "error": "Booking is unavailable"}, status=400)
+    if amount != int(booking.total_price):
+        return JsonResponse({"ok": False, "error": "Booking or amount mismatch"}, status=400)
+
+    reference = str(
+        payload.get("id")
+        or payload.get("referenceCode")
+        or payload.get("transactionId")
+        or ""
+    )
+    marked_booking, changed = mark_booking_paid(booking.pk, reference)
+    return JsonResponse(
+        {"ok": True, "booking": marked_booking.booking_code, "changed": changed}
+    )
+
+# Nhận kết quả thanh toán từ MoMo, kiểm tra chữ ký và cập nhật trạng thái đã thanh toán
 @csrf_exempt
 def momo_ipn(request):
     if request.method != "POST":
@@ -307,11 +437,10 @@ def momo_ipn(request):
     if booking is None:
         return HttpResponse(status=404)
     if payload.get("resultCode") == 0:
-        booking.payment_status = Booking.PaymentStatus.PAID
-        booking.payment_reference = str(payload.get("transId", ""))
-        booking.paid_at = timezone.now()
-        booking.save(update_fields=("payment_status", "payment_reference", "paid_at", "updated_at"))
+        mark_booking_paid(booking.pk, str(payload.get("transId", "")))
     return HttpResponse(json.dumps({"resultCode": 0}), content_type="application/json")
+
+#Tạo và trả về hóa đơn/PDF xác nhận đặt phòng
 def booking_invoice(request, booking_id):
     queryset = Booking.objects.select_related("customer", "room")
     booking = get_object_or_404(queryset, pk=booking_id)
@@ -321,30 +450,34 @@ def booking_invoice(request, booking_id):
         return redirect("login")
     return _booking_confirmation_pdf(booking)
 
-
+# Tạo mã QR cho booking để khách sử dụng
 @customer_required
 def booking_qr(request, booking_id):
+    # Sinh ảnh QR chứa URL tra cứu booking cho khách đã được xác nhận.
     booking = get_object_or_404(
         Booking.objects.select_related("customer", "room"),
         pk=booking_id,
         customer=request.customer_user,
         status__in=(Booking.Status.CONFIRMED, Booking.Status.CHECKED_IN),
     )
-    scan_url = request.build_absolute_uri(
-        reverse("booking-qr-scan", kwargs={"token": booking.qr_token})
+    scan_url = _public_absolute_url(
+        request,
+        reverse("booking-qr-scan", kwargs={"token": booking.qr_token}),
     )
-    image = qrcode.make(scan_url)
+    image = _branded_qr_png(scan_url, color="#147a72")
     output = BytesIO()
     image.save(output, format="PNG")
     response = HttpResponse(output.getvalue(), content_type="image/png")
+    response["Cache-Control"] = "no-store"
     if request.GET.get("download") == "1":
         response["Content-Disposition"] = (
             f'attachment; filename="{booking.booking_code}.png"'
         )
     return response
 
-
+# Khi quét QR: kiểm tra booking → trạng thái → tạo yêu cầu check-in
 def booking_qr_scan(request, token):
+    # Giải mã token, kiểm tra trạng thái booking và tạo yêu cầu check-in nếu cần.
     try:
         token = uuid.UUID(token)
     except (ValueError, TypeError, AttributeError):
@@ -384,9 +517,10 @@ def booking_qr_scan(request, token):
             pass
     return _booking_confirmation_pdf(booking)
 
-
+# Tạo file PDF xác nhận đặt phòng
 def _booking_confirmation_pdf(booking):
     """Create the confirmation document opened when a booking QR is scanned."""
+    # Tạo phiếu PDF xác nhận gồm khách, phòng, ngày ở và thanh toán.
     output = BytesIO()
     font_path = Path("C:/Windows/Fonts/arial.ttf")
     bold_font_path = Path("C:/Windows/Fonts/arialbd.ttf")
@@ -424,7 +558,12 @@ def _booking_confirmation_pdf(booking):
         ["So dien thoai", booking.guest_phone or booking.customer.phone_number or "Chua cap nhat"],
         ["So CCCD", booking.guest_id_number or "Chua cap nhat"],
         ["Loai phong", booking.room_type],
-        ["So phong", booking.room.number if booking.room else "Chua gan"],
+        [
+            "So phong",
+            ", ".join(booking.room_assignments.values_list("room__number", flat=True))
+            or (booking.room.number if booking.room else "Chua gan"),
+        ],
+        ["So luong phong", str(booking.room_quantity)],
         ["So khach", f"{booking.guest_count} nguoi"],
         ["Check-in", f"{booking.check_in:%d/%m/%Y} - {booking.check_in_time:%H:%M}"],
         ["Check-out", f"{booking.check_out:%d/%m/%Y} - {booking.check_out_time:%H:%M}"],
@@ -457,21 +596,24 @@ def _booking_confirmation_pdf(booking):
     )
     return response
 
-
+# Tìm kiếm, lọc phòng theo ngày, số khách, loại phòng và giá
 def room_list(request):
+    # Tìm kiếm phòng theo ngày nhận/trả, số khách, hạng phòng và ngân sách.
     form = RoomSearchForm(request.GET or None)
     rooms = Room.objects.none()
-    if form.is_valid() or not request.GET:
-        cleaned_data = form.cleaned_data if form.is_valid() else {}
+    if form.is_valid():
+        cleaned_data = form.cleaned_data
         rooms = _available_rooms(
             cleaned_data.get("check_in"),
             cleaned_data.get("check_out"),
         )
+        requested_quantity = cleaned_data.get("room_quantity") or 1
         room_type = cleaned_data.get("room_type")
         guests = cleaned_data.get("guests")
         max_price = cleaned_data.get("max_price")
         check_in = cleaned_data.get("check_in")
         check_out = cleaned_data.get("check_out")
+        # Tách danh sách phòng có thể đặt theo đúng khoảng ngày khách chọn.
         available_rooms = _available_rooms(check_in, check_out)
         all_rooms = Room.objects.select_related("room_type").filter(
             room_type__is_active=True,
@@ -485,26 +627,14 @@ def room_list(request):
         room_list = []
         seen_types = set()
         for room in rooms:
+            room.available_quantity = _available_quantity(room.room_type, check_in, check_out)
             if room.room_type_id in seen_types:
                 continue
             seen_types.add(room.room_type_id)
-            room.available_quantity = _available_quantity(
-                room.room_type,
-                check_in,
-                check_out,
-            )
+            room.is_available = room.available_quantity >= requested_quantity
+            room.requested_quantity = requested_quantity
             room.selected_check_in = check_in
             room.selected_check_out = check_out
-            available_room = available_rooms.filter(
-                room_type_id=room.room_type_id
-            ).first()
-            if available_room:
-                room = available_room
-                room.available_quantity = _available_quantity(
-                    room.room_type, check_in, check_out
-                )
-                room.selected_check_in = check_in
-                room.selected_check_out = check_out
             uploaded_image = room.room_type.images.first()
             if uploaded_image:
                 room.room_type.image_url = uploaded_image.image.url
@@ -520,8 +650,9 @@ def room_list(request):
         rooms = room_list
     return render(request, "accounts/room_list.html", {"form": form, "rooms": rooms})
 
-
+#Hiển thị chi tiết phòng + xử lý đặt phòng
 def room_detail(request, room_id):
+    # Hiển thị chi tiết phòng và xử lý yêu cầu đặt phòng của khách.
     room = get_object_or_404(
         Room.objects.select_related("room_type"),
         pk=room_id,
@@ -533,6 +664,13 @@ def room_detail(request, room_id):
         request.FILES or None,
         customer=request.customer_user,
     )
+    requested_quantity = 1
+    if request.method != "POST":
+        try:
+            requested_quantity = max(1, int(request.GET.get("room_quantity", 1)))
+        except (TypeError, ValueError):
+            requested_quantity = 1
+        form.fields["room_quantity"].initial = requested_quantity
     uploaded_image = room.room_type.images.first()
     if uploaded_image:
         room.room_type.image_url = uploaded_image.image.url
@@ -550,37 +688,41 @@ def room_detail(request, room_id):
         selected_check_in,
         selected_check_out,
     )
-    room.is_available = room.available_quantity > 0
+    room.is_available = (
+        _available_quantity(room.room_type, selected_check_in, selected_check_out)
+        >= requested_quantity
+    )
     room.selected_check_in = selected_check_in
     room.selected_check_out = selected_check_out
-    price = _room_price(room.room_type)
+    price = _room_price(room.room_type, selected_check_in)
     if request.method == "POST" and request.customer_user is None:
         login_url = reverse("login")
         return redirect(f"{login_url}?next={request.path}")
-    if request.method == "POST" and form.is_valid():
+    if request.method == "POST" and room.room_type.is_under_maintenance:
+        form.add_error(None, "Hạng phòng đang được sửa chữa và tạm ngưng nhận đặt.")
+    elif request.method == "POST" and form.is_valid():
         data = form.cleaned_data
-        available_rooms = _available_quantity(
+        available_quantity = _available_quantity(
             room.room_type,
             data["check_in"],
             data["check_out"],
         )
-        room.available_quantity = available_rooms
-        room.is_available = available_rooms > 0
-        if available_rooms <= 0:
-            form.add_error(None, "Phòng đã hết trong khoảng thời gian bạn chọn.")
+        room.available_quantity = available_quantity
+        room.is_available = available_quantity >= data["room_quantity"]
+        if available_quantity < data["room_quantity"]:
+            form.add_error(None, f"Chỉ còn {available_quantity} phòng trong khoảng thời gian bạn chọn.")
         elif data["guest_count"] > room.room_type.max_guests:
             form.add_error("guest_count", "Số khách vượt quá sức chứa của phòng.")
         elif price is None:
             form.add_error(None, "Phòng chưa có giá áp dụng cho thời gian này.")
         else:
             with transaction.atomic():
-                available_room = (
+                available_rooms = list(
                     _available_rooms(data["check_in"], data["check_out"])
                     .select_for_update()
-                    .filter(room_type=room.room_type)
-                    .first()
+                    .filter(room_type=room.room_type)[: data["room_quantity"]]
                 )
-                if available_room is None:
+                if len(available_rooms) < data["room_quantity"]:
                     form.add_error(
                         None, "Phòng không còn trống trong khoảng thời gian này."
                     )
@@ -590,7 +732,7 @@ def room_detail(request, room_id):
                         {"room": room, "price": price, "form": form},
                     )
                 nights = (data["check_out"] - data["check_in"]).days
-                total_price = price.price * nights
+                total_price = price.price * nights * data["room_quantity"]
                 booking = Booking.objects.create(
                     customer=request.customer_user,
                     guest_full_name=data["guest_full_name"],
@@ -598,7 +740,7 @@ def room_detail(request, room_id):
                     guest_id_number=data["guest_id_number"],
                     id_card_front_image=data["id_card_front_image"],
                     id_card_back_image=data["id_card_back_image"],
-                    room=available_room,
+                    room=available_rooms[0],
                     booking_code=f"BK-{data['check_in']:%Y%m%d}-{uuid.uuid4().hex[:4].upper()}",
                     room_type=room.room_type.name,
                     check_in=data["check_in"],
@@ -606,12 +748,35 @@ def room_detail(request, room_id):
                     check_out=data["check_out"],
                     check_out_time=data["check_out_time"],
                     guest_count=data["guest_count"],
+                    room_quantity=data["room_quantity"],
                     total_price=total_price,
                     notes=data["notes"],
                 )
+                BookingRoom.objects.bulk_create(
+                    [
+                        BookingRoom(booking=booking, room=assigned_room)
+                        for assigned_room in available_rooms
+                    ]
+                )
+                Room.objects.filter(
+                    pk__in=[assigned_room.pk for assigned_room in available_rooms]
+                ).update(status=Room.Status.DEPOSIT)
+                # Báo cho toàn bộ nhân viên active biết có booking cần duyệt.
+                staff_users = User.objects.filter(role=User.Role.STAFF, is_active=True)
+                Notification.objects.bulk_create(
+                    [
+                        Notification(
+                            recipient=staff_user,
+                            booking=booking,
+                            title="Có yêu cầu đặt phòng mới",
+                            message=f"{booking.booking_code} đang chờ duyệt cho hạng {booking.room_type}.",
+                        )
+                        for staff_user in staff_users
+                    ]
+                )
             messages.success(
                 request,
-                f"Đã gửi yêu cầu đặt phòng {booking.booking_code}.",
+                f"Đã tạo booking {booking.booking_code}. Vui lòng thanh toán để xác nhận phòng.",
             )
             return redirect("customer-booking-detail", booking_id=booking.pk)
     return render(
@@ -620,7 +785,16 @@ def room_detail(request, room_id):
         {"room": room, "price": price, "form": form},
     )
 
+# Hiển thị thông báo của khách hàng và đánh dấu đã đọc
+def customer_notifications(request):
+    # Hiển thị và đánh dấu đã đọc các thông báo của khách hàng.
+    if request.customer_user is None:
+        return redirect("login")
+    notifications = Notification.objects.filter(recipient=request.customer_user)
+    notifications.filter(is_read=False).update(is_read=True)
+    return render(request, "accounts/notifications.html", {"notifications": notifications})
 
+# Xem/chỉnh sửa thông tin tài khoản khách hàng
 @customer_required
 def customer_profile(request):
     form = CustomerProfileForm(request.POST or None, instance=request.customer_user)
@@ -630,13 +804,20 @@ def customer_profile(request):
         return redirect("customer-profile")
     return render(request, "accounts/customer_profile.html", {"form": form})
 
-
+#đăng xuất khách hàng, xóa session và chuyển hướng về trang đăng nhập
 def customer_logout(request):
     if request.method == "POST":
         request.session.pop("customer_user_id", None)
-        return redirect("login")
+        return redirect("customer-home")
     return render(
         request,
         "accounts/logout.html",
         {"logout_area": "Customer", "cancel_url": "/customer/"},
+    )
+# Trang tư vấn khách hàng
+@customer_required
+def customer_consultation(request):
+    return render(
+        request,
+        "accounts/customer_consultation.html"
     )

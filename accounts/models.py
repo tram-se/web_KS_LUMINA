@@ -12,6 +12,7 @@ class LuminaUserManager(UserManager):
 
 
 class User(AbstractUser):
+    # Tài khoản dùng chung cho khách hàng, nhân viên và Admin.
     class Role(models.TextChoices):
         CUSTOMER = "CUSTOMER", "Customer"
         STAFF = "STAFF", "Staff"
@@ -35,6 +36,7 @@ class User(AbstractUser):
 
 
 class Booking(models.Model):
+    # Một yêu cầu đặt phòng, gồm khách, phòng, khoảng ngày và thanh toán.
     class Status(models.TextChoices):
         PENDING = "PENDING", "Chờ xác nhận"
         CONFIRMED = "CONFIRMED", "Đã xác nhận"
@@ -81,6 +83,7 @@ class Booking(models.Model):
     check_out = models.DateField()
     check_out_time = models.TimeField(default="12:00")
     guest_count = models.PositiveSmallIntegerField(default=1)
+    room_quantity = models.PositiveSmallIntegerField("Số lượng phòng", default=1)
     total_price = models.DecimalField(max_digits=12, decimal_places=0, default=0)
     payment_status = models.CharField(
         "Trạng thái thanh toán",
@@ -113,6 +116,41 @@ class Booking(models.Model):
 
     def __str__(self):
         return self.booking_code
+
+
+class BookingRoom(models.Model):
+    booking = models.ForeignKey(
+        Booking, on_delete=models.CASCADE, related_name="room_assignments"
+    )
+    room = models.ForeignKey(
+        "admin_panel.Room", on_delete=models.PROTECT, related_name="booking_assignments"
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("booking", "room"), name="unique_booking_room"
+            )
+        ]
+
+
+class Notification(models.Model):
+    recipient = models.ForeignKey(
+        User, on_delete=models.CASCADE, related_name="notifications"
+    )
+    booking = models.ForeignKey(
+        Booking, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications"
+    )
+    title = models.CharField(max_length=150)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ("-created_at",)
+
+    def __str__(self):
+        return self.title
 
 
 class CheckInRequest(models.Model):
@@ -155,3 +193,75 @@ class ConsultationRequest(models.Model):
 
     def __str__(self):
         return f"{self.full_name} - {self.phone_number}"
+
+
+# ==========================================================
+# KHU VỰC LIVE CHAT (ĐÃ TỐI ƯU & SỬA LỖI TRÙNG CLASS)
+# ==========================================================
+
+class ChatRoom(models.Model):
+    class Mode(models.TextChoices):
+        BOT = "BOT", "Chatbot tự động"
+        STAFF = "STAFF", "Nhân viên hỗ trợ"
+
+    customer = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='customer_rooms')
+    staff = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='staff_rooms')
+    session_key = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    customer_name = models.CharField(max_length=255, default="Khách vãng lai", blank=True)
+    customer_phone = models.CharField(max_length=50, default="Chưa có", blank=True)
+    mode = models.CharField(max_length=20, choices=Mode.choices, default=Mode.BOT)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True, blank=True)
+
+    @property
+    def display_name(self):
+        if self.customer:
+            full_name = self.customer.get_full_name()
+            if full_name and full_name.strip():
+                return full_name
+            return self.customer.username
+        return self.customer_name or "Khách vãng lai"
+
+    @property
+    def display_phone(self):
+        if self.customer:
+            if hasattr(self.customer, 'phone_number') and self.customer.phone_number:
+                return self.customer.phone_number
+            elif hasattr(self.customer, 'profile') and hasattr(self.customer.profile, 'phone_number'):
+                return self.customer.profile.phone_number
+        return self.customer_phone or "Chưa có"
+
+class ChatMessage(models.Model):
+    room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='messages')
+    sender = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    is_from_customer = models.BooleanField(default=True)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        if self.sender:
+            sender_name = self.sender.get_full_name() or self.sender.username
+        else:
+            sender_name = "Khách lẻ"
+        return f"{sender_name}: {self.message[:30]}"
+
+
+class ChatbotFAQ(models.Model):
+    category = models.CharField("Phân loại", max_length=50, default="GENERAL")
+    keywords = models.CharField("Từ khóa nhận diện", max_length=255, help_text="Phân cách bằng dấu phẩy, ví dụ: deluxe, tiện ích, giá phòng")
+    question = models.CharField("Câu hỏi mẫu", max_length=255)
+    answer = models.TextField("Câu trả lời")
+    is_active = models.BooleanField("Đang sử dụng", default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["category", "id"]
+        verbose_name = "Hỏi đáp Chatbot (FAQ)"
+        verbose_name_plural = "Hỏi đáp Chatbot (FAQ)"
+
+    def __str__(self):
+        return f"[{self.category}] {self.question}"

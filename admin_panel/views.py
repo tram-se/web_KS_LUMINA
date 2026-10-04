@@ -11,7 +11,7 @@ from accounts.models import Booking, User
 
 from .models import ActivityLog, Amenity, Room, RoomPrice, RoomType, Service
 
-
+#Trang tổng quan Admin
 @admin_required
 def admin_home(request):
     context = {
@@ -71,9 +71,13 @@ def admin_booking_report(request):
     non_cancelled = bookings.exclude(status=Booking.Status.CANCELLED)
     confirmed = bookings.filter(status=Booking.Status.CONFIRMED)
     total_rooms = Room.objects.filter(status=Room.Status.AVAILABLE).count()
-    booked_rooms = (
-        confirmed.filter(room__isnull=False).values("room_id").distinct().count()
-    )
+    booked_rooms = confirmed.filter(
+        room__isnull=False
+    ).filter(
+        check_in__lt=month_end_exclusive,
+        check_out__gt=month_start,
+    ).values("room_id").distinct().count()
+    available_rooms = max(total_rooms - booked_rooms, 0)
     revenue_expected = non_cancelled.aggregate(total=Sum("total_price"))["total"] or 0
     revenue_actual = confirmed.aggregate(total=Sum("total_price"))["total"] or 0
     daily_stats = []
@@ -99,7 +103,7 @@ def admin_booking_report(request):
         "revenue_actual": revenue_actual,
         "total_rooms": total_rooms,
         "booked_rooms": booked_rooms,
-        "available_rooms": max(total_rooms - booked_rooms, 0),
+        "available_rooms": available_rooms,
         "occupancy_rate": (
             round(booked_rooms / total_rooms * 100, 1) if total_rooms else 0
         ),

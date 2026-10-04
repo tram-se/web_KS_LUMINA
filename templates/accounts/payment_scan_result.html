@@ -1,0 +1,18 @@
+{% extends "accounts/customer_base.html" %}
+{% block customer_title %}Kết quả thanh toán{% endblock %}
+{% block customer_content %}
+<section class="booking-panel" style="max-width:620px;margin:auto;text-align:center">
+  {% if error %}
+  <h1>Thanh toán không hợp lệ</h1>
+  <p class="customer-subtitle">{{ error }}</p>
+  {% else %}
+  <div style="padding:20px;background:#e4f0eb;border:1px solid #b8d8ca;color:#145f56">
+    <h1 style="margin:0 0 8px">Đã thanh toán</h1>
+    <p style="margin:0">Booking {{ booking.booking_code }} đã được xác nhận.</p>
+  </div>
+  <p class="customer-subtitle" style="margin-top:20px">Mã booking: <b>{{ booking.booking_code }}</b></p>
+  <p class="customer-subtitle">Số tiền mô phỏng: <b>{{ booking.total_price|floatformat:0 }} ₫</b></p>
+  <p class="customer-subtitle">Bạn có thể quay lại màn hình thanh toán để xem QR check-in.</p>
+  {% endif %}
+</section>
+{% endblock %}

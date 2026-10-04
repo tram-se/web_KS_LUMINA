@@ -43,6 +43,13 @@
     height: 220px;
     max-width: 100%;
   }
+  .checkin-qr-image {
+    padding: 12px;
+    border: 1px solid #b9dfd6;
+    border-radius: 16px;
+    background: #edf9f5;
+    box-shadow: 0 12px 28px rgba(20, 122, 114, 0.14);
+  }
   .qr-actions {
     display: flex;
     gap: 8px;
@@ -56,6 +63,13 @@
     color: var(--customer-teal);
     font-size: 11px;
     font-weight: bold;
+  }
+  .booking-success {
+    padding: 16px 18px;
+    margin-bottom: 20px;
+    background: #e4f0eb;
+    border: 1px solid #b8d8ca;
+    color: #145f56;
   }
   @media print {
     .customer-nav,
@@ -84,6 +98,12 @@
 >
 <div class="booking-detail" style="margin-top: 20px">
   <section class="booking-panel">
+    {% if booking.payment_status == 'PAID' and booking.status == 'CONFIRMED' %}
+    <div class="booking-success">
+      <strong>Đặt phòng thành công</strong>
+      <div>Thanh toán đã được xác nhận. Booking của bạn đã được chốt.</div>
+    </div>
+    {% endif %}
     <p class="customer-kicker">BOOKING {{ booking.booking_code }}</p>
     <h1>{{ booking.room_type }}</h1>
     <p class="status-pill">{{ booking.get_status_display }}</p>
@@ -115,7 +135,7 @@
       <div><small>Hạng phòng</small><b>{{ booking.room_type }}</b></div>
       <div>
         <small>Số phòng</small
-        ><b>{{ booking.room.number|default:"Chưa được gán" }}</b>
+        ><b>{% for assignment in booking.room_assignments.all %}{{ assignment.room.number }}{% if not forloop.last %}, {% endif %}{% empty %}{{ booking.room.number|default:"Chưa được gán" }}{% endfor %}</b>
       </div>
       <div>
         <small>Check-in</small><b>{{ booking.check_in|date:"d/m/Y" }} - {{ booking.check_in_time|time:"H:i" }}</b>
@@ -123,7 +143,12 @@
       <div>
         <small>Check-out</small><b>{{ booking.check_out|date:"d/m/Y" }} - {{ booking.check_out_time|time:"H:i" }}</b>
       </div>
+      <div>
+        <small>Thời gian đặt đơn</small>
+        <b>{{ booking.created_at|date:"d/m/Y H:i:s" }}</b>
+      </div>
       <div><small>Số đêm</small><b>{{ nights }}</b></div>
+      <div><small>Số lượng phòng</small><b>{{ booking.room_quantity }}</b></div>
       <div>
         <small>Tổng tiền</small><b>{{ booking.total_price|floatformat:0 }} ₫</b>
       </div>
@@ -136,6 +161,7 @@
     {% if booking.payment_status != 'PAID' %}<a class="customer-button" href="{% url 'booking-payment' booking.pk %}">Thanh toán online</a>{% else %}<a class="customer-button secondary" href="{% url 'booking-invoice' booking.pk %}">Tải hóa đơn PDF</a>{% endif %}
     <h2>Phiếu xác nhận đặt phòng</h2>
     {% if booking.status == 'CONFIRMED' or booking.status == 'CHECKED_IN' %}<img
+      class="checkin-qr-image"
       src="{% url 'booking-qr' booking.pk %}"
       alt="QR {{ booking.booking_code }}"
     />
