@@ -1,0 +1,178 @@
+{% extends "admin_panel/nen_quan_tri.html" %} {% block admin_title %}Tổng quan{%
+endblock %} {% block admin_heading %}Chào {{ request.user.full_name }}{%
+endblock %} {% block admin_content %}
+<div class="admin-grid">
+  <div class="admin-stat gold">
+    <p>Tài khoản hệ thống</p>
+    <strong>{{ user_count }}</strong
+    ><small
+      >{{ staff_count }} nhân viên · {{ customer_count }} khách hàng</small
+    >
+  </div>
+  <div class="admin-stat teal">
+    <p>Đơn đặt phòng</p>
+    <strong>{{ booking_count }}</strong
+    ><small>{{ pending_bookings }} đơn đang chờ xử lý</small>
+  </div>
+  <div class="admin-stat">
+    <p>Phòng khách sạn</p>
+    <strong>{{ room_count }}</strong
+    ><small>{{ available_rooms }} phòng đang trống</small>
+  </div>
+  <div class="admin-stat">
+    <p>Danh mục dịch vụ</p>
+    <strong>{{ service_count|add:amenity_count }}</strong
+    ><small
+      >{{ room_type_count }} loại phòng · {{ price_count }} bảng giá</small
+    >
+  </div>
+</div>
+<div class="admin-layout">
+  <div>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <div>
+          <p class="admin-kicker">QUICK MANAGEMENT</p>
+          <h2>Trung tâm quản lý</h2>
+        </div>
+        <a href="{% url 'admin:index' %}">Tất cả module →</a>
+      </div>
+      <div class="admin-actions">
+        <a
+          class="admin-action"
+          href="{% url 'admin:accounts_user_changelist' %}"
+          ><b>Tài khoản & phân quyền</b
+          ><small>Quản lý Admin, Staff, Customer</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:admin_panel_roomtype_changelist' %}"
+          ><b>Loại phòng</b
+          ><small
+            >{{ pending_room_listings }} tin chờ duyệt · Thêm, sửa và cập nhật
+            loại phòng</small
+          ></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:admin_panel_room_changelist' %}"
+          ><b>Phòng khách sạn</b
+          ><small>Theo dõi và cập nhật trạng thái phòng</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:admin_panel_roomprice_changelist' %}"
+          ><b>Giá phòng</b><small>Giá theo loại phòng và thời gian</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:admin_panel_amenity_changelist' %}"
+          ><b>Tiện nghi</b><small>Quản lý tiện nghi trong phòng</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:admin_panel_service_changelist' %}"
+          ><b>Dịch vụ</b><small>Quản lý dịch vụ cung cấp</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:accounts_user_changelist' %}?role__exact=CUSTOMER"
+          ><b>Khách hàng</b><small>Xem và cập nhật hồ sơ khách</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:accounts_booking_changelist' %}"
+          ><b>Đơn đặt phòng</b><small>Theo dõi toàn bộ đơn hệ thống</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:accounts_user_changelist' %}?role__exact=STAFF"
+          ><b>Nhân viên</b><small>Thêm, sửa và quản lý Staff</small></a
+        >
+        <a
+          class="admin-action"
+          href="{% url 'admin:admin_panel_activitylog_changelist' %}"
+          ><b>Hoạt động hệ thống</b><small>Xem lịch sử thao tác chính</small></a
+        >
+      </div>
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <div>
+          <p class="admin-kicker">ROOM STATUS</p>
+          <h2>Tình trạng phòng</h2>
+        </div>
+        <a href="{% url 'admin:admin_panel_room_changelist' %}"
+          >Quản lý phòng →</a
+        >
+      </div>
+      <div class="admin-grid">
+        <div class="admin-stat">
+          <p>Còn trống</p>
+          <strong>{{ available_rooms }}</strong>
+        </div>
+        <div class="admin-stat">
+          <p>Đang bảo trì</p>
+          <strong>{{ maintenance_rooms }}</strong>
+        </div>
+        <div class="admin-stat">
+          <p>Tổng số phòng</p>
+          <strong>{{ room_count }}</strong>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <div>
+          <p class="admin-kicker">LATEST BOOKINGS</p>
+          <h2>Đơn gần đây</h2>
+        </div>
+        <a href="{% url 'admin-booking-report' %}">Xem báo cáo →</a>
+      </div>
+      {% for booking in recent_bookings %}
+      <div class="activity">
+        <span class="activity-mark"></span
+        ><span
+          ><b>{{ booking.booking_code }} · {{ booking.customer.full_name }}</b
+          ><small
+            >{{ booking.room_type }} · {{ booking.get_status_display }} · {{
+            booking.created_at|timesince }} trước</small
+          ></span
+        >
+      </div>
+      {% empty %}
+      <div class="empty-admin">Chưa có đơn đặt phòng.</div>
+      {% endfor %}
+    </section>
+    <section class="admin-card">
+      <div class="admin-card-head">
+        <div>
+          <p class="admin-kicker">SYSTEM LOG</p>
+          <h2>Hoạt động mới nhất</h2>
+        </div>
+        <a href="{% url 'admin:admin_panel_activitylog_changelist' %}"
+          >Nhật ký →</a
+        >
+      </div>
+      {% for item in recent_activity %}
+      <div class="activity">
+        <span
+          class="activity-mark {% if item.level == 'WARNING' %}warning{% endif %}"
+        ></span
+        ><span
+          ><b>{{ item.action }}</b
+          ><small
+            >{{ item.actor.full_name|default:"Hệ thống" }} · {{
+            item.created_at|timesince }} trước</small
+          ></span
+        >
+      </div>
+      {% empty %}
+      <div class="empty-admin">Chưa có nhật ký hoạt động.</div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

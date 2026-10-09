@@ -1,0 +1,23 @@
+{% extends "accounts/nen_khach_hang.html" %}
+{% block customer_title %}Thông báo{% endblock %}
+{% block customer_content %}
+<section class="booking-card notification-page">
+  <!-- Danh sách thông báo của khách hàng; mở trang này sẽ đánh dấu đã đọc. -->
+  <p class="customer-kicker">NOTIFICATIONS</p>
+  <h1>Thông báo của bạn</h1>
+  {% for notification in notifications %}
+  <article class="notification-item {% if not notification.is_read %}unread{% endif %}">
+    <div><strong>{{ notification.title }}</strong><p>{{ notification.message }}</p></div>
+    <small>{{ notification.created_at|date:"d/m/Y H:i" }}</small>
+  </article>
+  {% empty %}<div class="empty-customer">Chưa có thông báo.</div>{% endfor %}
+</section>
+<style>
+  .notification-page h1 { margin-bottom: 20px; }
+  .notification-item { display:flex; justify-content:space-between; gap:20px; padding:16px 0; border-bottom:1px solid var(--customer-line); }
+  .notification-item strong { color:var(--customer-ink); font-size:13px; }
+  .notification-item p { margin:6px 0 0; color:var(--customer-muted); font-size:12px; }
+  .notification-item small { color:var(--customer-muted); white-space:nowrap; font-size:10px; }
+  .notification-item.unread { border-left:3px solid var(--customer-teal); padding-left:12px; }
+</style>
+{% endblock %}

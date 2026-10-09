@@ -1,0 +1,123 @@
+{% extends "staff/nen_nhan_vien.html" %}
+{% block staff_title %}Tổng quan{% endblock %}
+{% block staff_heading %}Chào buổi sáng, {{ staff_user.full_name }}{% endblock %}
+{% block staff_content %}
+{% if pending_checkin_requests %}
+<section class="data-card" style="margin-bottom:20px">
+  <p class="eyebrow">CHECK-IN ALERTS</p>
+  <h2>🔔 {{ pending_checkin_requests }} yêu cầu check-in đang chờ</h2>
+  {% for check_in_request in pending_checkin_requests_list %}
+  <a href="{% url 'staff-booking-detail' check_in_request.booking.pk %}">{{ check_in_request.booking.guest_full_name|default:check_in_request.booking.customer.full_name }} · Phòng {{ check_in_request.booking.room.number|default:"Chưa gán" }} · {{ check_in_request.requested_at|date:"d/m/Y H:i" }}</a>
+  {% endfor %}
+</section>
+{% endif %}
+<div class="welcome-row">
+  <p class="muted">Đây là tình hình vận hành mới nhất của khách sạn.</p>
+  <a class="button primary" href="{% url 'staff-bookings' %}"
+    >Xem đơn đặt phòng <span>→</span></a
+  >
+</div>
+<div class="kpi-grid">
+  <div class="kpi-card accent">
+    <span class="kpi-icon">◷</span>
+    <p>Đơn chờ xử lý</p>
+    <strong>{{ pending_bookings }}</strong><small>Cần được phản hồi</small>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-icon green">✓</span>
+    <p>Đã xác nhận</p>
+    <strong>{{ confirmed_bookings }}</strong><small>Đơn đang hoạt động</small>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-icon orange">♧</span>
+    <p>Khách cần tư vấn</p>
+    <strong>{{ new_consultations }}</strong><small>Yêu cầu mới</small>
+  </div>
+  <div class="kpi-card">
+    <span class="kpi-icon blue">♙</span>
+    <p>Khách hàng</p>
+    <strong>{{ customer_count }}</strong><small>Trong hệ thống</small>
+  </div>
+</div>
+<div class="dashboard-grid">
+  <section class="data-card">
+    <div class="card-heading">
+      <div>
+        <p class="eyebrow">BOOKINGS</p>
+        <h2>Đơn đặt phòng gần đây</h2>
+      </div>
+      <a href="{% url 'staff-bookings' %}">Xem tất cả →</a>
+    </div>
+    {% if recent_bookings %}
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
+            <th>Ngày nhận phòng</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in recent_bookings %}
+          <tr>
+            <td>
+              <a
+                class="strong"
+                href="{% url 'staff-booking-detail' booking.pk %}"
+                >{{ booking.booking_code }}</a
+              ><small>{{ booking.room_type }}</small>
+            </td>
+            <td>
+              {{ booking.customer.full_name }}
+              <small>{{ booking.customer.phone_number|default:"Chưa có SĐT" }}</small>
+            </td>
+            <td>
+              {{ booking.check_in|date:"d/m/Y" }}<small
+                >{{ booking.guest_count }} khách</small
+              >
+            </td>
+            <td>
+              <span class="badge {{ booking.status|lower }}"
+                >{{ booking.get_status_display }}</span
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty">Chưa có đơn đặt phòng nào.</div>
+    {% endif %}
+  </section>
+  <section class="data-card">
+    <div class="card-heading">
+      <div>
+        <p class="eyebrow">FOLLOW UP</p>
+        <h2>Yêu cầu tư vấn mới</h2>
+      </div>
+      <a href="{% url 'staff-consultations' %}">Xem tất cả →</a>
+    </div>
+    {% if recent_consultations %}
+    <div class="consult-list">
+      {% for item in recent_consultations %}<a
+        class="consult-item"
+        href="{% url 'staff-consultation-detail' item.pk %}"
+        ><span class="avatar soft">{{ item.full_name|first|upper }}</span
+        ><span
+          ><b>{{ item.full_name }}</b
+          ><small
+            >{{ item.phone_number }} · {{ item.created_at|timesince }}
+            trước</small
+          ></span
+        ><span class="arrow">→</span></a
+      >{% endfor %}
+    </div>
+    {% else %}
+    <div class="empty">Không có yêu cầu mới.</div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

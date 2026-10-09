@@ -1,0 +1,96 @@
+{% extends "staff/nen_nhan_vien.html" %} {% load tien_te %}
+{% block staff_title %}Chi tiết đơn{% endblock %}
+{% block staff_heading %}Chi tiết đơn {{ booking.booking_code }}{% endblock %}
+{% block staff_content %}
+<a class="back-link" href="{% url 'staff-bookings' %}"
+  >← Quay lại danh sách đơn</a
+>
+<div class="detail-grid">
+  <section class="data-card detail-main">
+    <div class="detail-header">
+      <div>
+        <p class="eyebrow">BOOKING {{ booking.booking_code }}</p>
+        <h2>{{ booking.room_type }}</h2>
+      </div>
+      <span class="badge {{ booking.status|lower }}"
+        >{{ booking.get_status_display }}</span
+      >
+    </div>
+    <div class="info-grid">
+      <div>
+        <small>Khách hàng</small
+        ><b>{{ booking.guest_full_name|default:booking.customer.full_name }}</b
+        ><a href="{% url 'staff-customer-detail' booking.customer.pk %}"
+          >Xem hồ sơ khách →</a
+        >
+      </div>
+      <div>
+        <small>Số điện thoại</small
+        ><b>{{ booking.guest_phone|default:booking.customer.phone_number|default:"Chưa cập nhật" }}</b>
+      </div>
+      <div>
+        <small>CCCD / CMND</small
+        ><b>{{ booking.guest_id_number|default:"Chưa cập nhật" }}</b>
+      </div>
+      <div>
+        <small>Ảnh CCCD mặt trước</small>
+        {% if booking.id_card_front_image %}<a href="{{ booking.id_card_front_image.url }}" target="_blank"><img src="{{ booking.id_card_front_image.url }}" alt="Ảnh CCCD mặt trước" style="display:block;max-width:220px;max-height:140px;margin-top:8px;object-fit:contain" /></a>{% else %}<b>Chưa có</b>{% endif %}
+      </div>
+      <div>
+        <small>Ảnh CCCD mặt sau</small>
+        {% if booking.id_card_back_image %}<a href="{{ booking.id_card_back_image.url }}" target="_blank"><img src="{{ booking.id_card_back_image.url }}" alt="Ảnh CCCD mặt sau" style="display:block;max-width:220px;max-height:140px;margin-top:8px;object-fit:contain" /></a>{% else %}<b>Chưa có</b>{% endif %}
+      </div>
+      <div>
+        <small>Nhận phòng</small><b>{{ booking.check_in|date:"d/m/Y" }} - {{ booking.check_in_time|time:"H:i" }}</b>
+      </div>
+      <div>
+        <small>Trả phòng</small><b>{{ booking.check_out|date:"d/m/Y" }} - {{ booking.check_out_time|time:"H:i" }}</b>
+      </div>
+      <div><small>Số khách</small><b>{{ booking.guest_count }} người</b></div>
+      <div><small>Số lượng phòng</small><b>{{ booking.room_quantity }}</b></div>
+      <div>
+        <small>Tổng tiền</small><b>{{ booking.total_price|vnd }}</b>
+      </div>
+      <div>
+        <small>Thanh toán</small><b>{{ booking.get_payment_status_display }}</b>
+        {% if booking.payment_reference %}<small>Mã GD: {{ booking.payment_reference }}</small>{% endif %}
+        {% if booking.payment_proof %}<a href="{{ booking.payment_proof.url }}" target="_blank">Xem biên lai thanh toán</a>{% endif %}
+      </div>
+      <div>
+        <small>Phòng được gán</small
+        ><b>{% for assignment in booking.room_assignments.all %}{{ assignment.room.number }}{% if not forloop.last %}, {% endif %}{% empty %}{{ booking.room.number|default:"Chưa gán" }}{% endfor %}</b>
+      </div>
+    </div>
+    <div class="note-box">
+      <small>Ghi chú từ khách</small>
+      <p>{{ booking.notes|default:"Không có ghi chú." }}</p>
+    </div>
+  </section>
+  <section class="data-card action-card">
+    <a class="button full" href="{% url 'booking-invoice' booking.pk %}">Tải hóa đơn PDF</a>
+    {% if booking.payment_status == 'PENDING' %}
+    <form method="post" action="{% url 'staff-payment-action' booking.pk 'approve' %}" style="margin-top:10px">{% csrf_token %}<button class="button primary full" type="submit">Xác nhận đã nhận tiền</button></form>
+    <form method="post" action="{% url 'staff-payment-action' booking.pk 'reject' %}" style="margin-top:8px">{% csrf_token %}<button class="button full" type="submit">Từ chối thanh toán</button></form>
+    {% endif %}
+    <p class="eyebrow">PROCESS ORDER</p>
+    <h2>Cập nhật đơn</h2>
+    <form method="post">
+      {% csrf_token %}{{ form.as_p }}<button
+        class="button primary full"
+        type="submit"
+      >
+        Lưu thay đổi
+      </button>
+    </form>
+    {% if check_in_request and check_in_request.status == 'PENDING' %}
+    <div class="note-box" style="margin-top:20px"><strong>Khách đang yêu cầu check-in qua QR.</strong><p>Đã quét lúc {{ check_in_request.requested_at|date:"d/m/Y H:i" }}. Hãy đối chiếu ảnh CCCD trước khi quyết định.</p></div>
+    <form method="post" action="{% url 'staff-checkin-request-action' check_in_request.pk 'approve' %}" style="margin-top:12px">
+      {% csrf_token %}<button class="button primary full" type="submit">Xác nhận check-in</button>
+    </form>
+    <form method="post" action="{% url 'staff-checkin-request-action' check_in_request.pk 'reject' %}" style="margin-top:8px">
+      {% csrf_token %}<button class="button full" type="submit">Từ chối</button>
+    </form>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

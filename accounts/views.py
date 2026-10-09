@@ -21,14 +21,13 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 
 import qrcode
 import requests
+from PIL import Image, ImageDraw, ImageFont
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-from urllib.parse import urlencode
-
 from admin_panel.models import Room, RoomPrice, RoomType
 
 from .decorators import customer_required
@@ -59,7 +58,7 @@ def _public_absolute_url(request, path):
     return request.build_absolute_uri(path)
 
 
-def _branded_qr_png(data, color="#8f111b"):
+def _branded_qr_png(data, color="#0e716b", label="LUMINA HOTEL", subtitle=""):
     qr = qrcode.QRCode(
         error_correction=qrcode.constants.ERROR_CORRECT_M,
         box_size=12,
@@ -67,7 +66,56 @@ def _branded_qr_png(data, color="#8f111b"):
     )
     qr.add_data(data)
     qr.make(fit=True)
-    return qr.make_image(fill_color=color, back_color="#ffffff")
+    qr_image = qr.make_image(fill_color=color, back_color="#ffffff").convert("RGB")
+
+    canvas_padding = 36
+    label_height = 92 if subtitle else 70
+    canvas = Image.new(
+        "RGB",
+        (
+            qr_image.width + canvas_padding * 2,
+            qr_image.height + canvas_padding * 2 + label_height,
+        ),
+        "#ffffff",
+    )
+    canvas.paste(qr_image, (canvas_padding, canvas_padding))
+
+    draw = ImageDraw.Draw(canvas)
+    font_paths = (
+        r"C:\Windows\Fonts\segoeuib.ttf",
+        r"C:\Windows\Fonts\arialbd.ttf",
+    )
+    regular_font_paths = (
+        r"C:\Windows\Fonts\segoeui.ttf",
+        r"C:\Windows\Fonts\arial.ttf",
+    )
+
+    def load_font(paths, size):
+        for path in paths:
+            try:
+                return ImageFont.truetype(path, size)
+            except OSError:
+                continue
+        return ImageFont.load_default()
+
+    title_font = load_font(font_paths, 30)
+    subtitle_font = load_font(regular_font_paths, 18)
+    title_box = draw.textbbox((0, 0), label, font=title_font)
+    title_x = (canvas.width - (title_box[2] - title_box[0])) // 2
+    title_y = qr_image.height + canvas_padding + 12
+    draw.text((title_x, title_y), label, fill=color, font=title_font)
+
+    if subtitle:
+        subtitle_box = draw.textbbox((0, 0), subtitle, font=subtitle_font)
+        subtitle_x = (canvas.width - (subtitle_box[2] - subtitle_box[0])) // 2
+        draw.text(
+            (subtitle_x, title_y + 38),
+            subtitle,
+            fill="#526b68",
+            font=subtitle_font,
+        )
+
+    return canvas
 
 # Tìm giá phòng đang áp dụng theo ngày nhận phòng
 def _room_price(room_type, check_in=None):
@@ -174,7 +222,7 @@ def customer_login(request):
         form.add_error(None, "Tài khoản này không thuộc khu vực Customer.")
     return render(
         request,
-        "accounts/login.html",
+        "accounts/dang_nhap.html",
         {
             "form": form,
             "login_area": "Customer",
@@ -195,7 +243,7 @@ def register(request):
         return redirect(_next_url(request))
     return render(
         request,
-        "accounts/register.html",
+        "accounts/dang_ky.html",
         {"form": form, "next_url": _next_url(request)},
     )
 
@@ -232,7 +280,7 @@ def customer_home(request):
             room_type.image_url = uploaded_image.image.url
     return render(
         request,
-        "accounts/customer_home.html",
+        "accounts/trang_chu_khach_hang.html",
         {
             "recent_bookings": recent_bookings,
             "room_types": room_types,
@@ -250,7 +298,7 @@ def customer_booking_detail(request, booking_id):
     )
     nights = (booking.check_out - booking.check_in).days
     return render(
-        request, "accounts/booking_detail.html", {"booking": booking, "nights": nights}
+        request, "accounts/chi_tiet_dat_phong.html", {"booking": booking, "nights": nights}
     )
 
 # Xử lý thanh toán – gửi biên lai hoặc tạo giao dịch MoMo
@@ -275,7 +323,7 @@ def booking_payment(request, booking_id):
     payment_text = f"LUMINA {booking.booking_code}"
     return render(
         request,
-        "accounts/booking_payment.html",
+        "accounts/thanh_toan_dat_phong.html",
         {
             "booking": booking,
             "payment_text": payment_text,
@@ -292,9 +340,14 @@ def booking_payment_qr(request, booking_id):
     )
     scan_url = _public_absolute_url(
         request,
-        f"{reverse('payment-qr-scan', kwargs={'token': booking.qr_token})}?{urlencode({'booking': booking.booking_code, 'amount': int(booking.total_price)})}",
+        reverse("payment-qr-scan", kwargs={"token": booking.qr_token}),
     )
-    image = _branded_qr_png(scan_url, color="#b42332")
+    image = _branded_qr_png(
+        scan_url,
+        color="#0e716b",
+        label="VietQR",
+        subtitle="QUÉT ĐỂ THANH TOÁN",
+    )
     output = BytesIO()
     image.save(output, format="PNG")
     response = HttpResponse(output.getvalue(), content_type="image/png")
@@ -308,7 +361,7 @@ def payment_qr_scan(request, token):
     except (ValueError, TypeError, AttributeError):
         return render(
             request,
-            "accounts/payment_scan_result.html",
+            "accounts/ket_qua_quet_thanh_toan.html",
             {"error": "Mã thanh toán không hợp lệ."},
             status=404,
         )
@@ -316,31 +369,21 @@ def payment_qr_scan(request, token):
     if booking is None:
         return render(
             request,
-            "accounts/payment_scan_result.html",
+            "accounts/ket_qua_quet_thanh_toan.html",
             {"error": "Không tìm thấy booking."},
             status=404,
         )
     if booking.status == Booking.Status.CANCELLED:
         return render(
             request,
-            "accounts/payment_scan_result.html",
+            "accounts/ket_qua_quet_thanh_toan.html",
             {"error": "Booking đã bị hủy."},
-            status=400,
-        )
-    if (
-        request.GET.get("booking") != booking.booking_code
-        or request.GET.get("amount") != str(int(booking.total_price))
-    ):
-        return render(
-            request,
-            "accounts/payment_scan_result.html",
-            {"error": "Thông tin QR không khớp với booking hoặc số tiền."},
             status=400,
         )
     mark_booking_paid(booking.pk, f"SIM-{booking.booking_code}")
     return render(
         request,
-        "accounts/payment_scan_result.html",
+        "accounts/ket_qua_quet_thanh_toan.html",
         {"booking": Booking.objects.get(pk=booking.pk)},
     )
 
@@ -483,7 +526,7 @@ def booking_qr_scan(request, token):
     except (ValueError, TypeError, AttributeError):
         return render(
             request,
-            "accounts/qr_scan_result.html",
+            "accounts/ket_qua_quet_qr.html",
             {"error": "QR Booking không tồn tại hoặc không hợp lệ."},
             status=404,
         )
@@ -493,16 +536,16 @@ def booking_qr_scan(request, token):
     if booking is None:
         return render(
             request,
-            "accounts/qr_scan_result.html",
+            "accounts/ket_qua_quet_qr.html",
             {"error": "QR Booking không tồn tại hoặc không hợp lệ."},
             status=404,
         )
     if booking.status == Booking.Status.CANCELLED:
-        return render(request, "accounts/qr_scan_result.html", {"error": "Booking này đã bị hủy."})
+        return render(request, "accounts/ket_qua_quet_qr.html", {"error": "Booking này đã bị hủy."})
     if booking.status == Booking.Status.PENDING:
-        return render(request, "accounts/qr_scan_result.html", {"error": "Booking chưa được xác nhận."})
+        return render(request, "accounts/ket_qua_quet_qr.html", {"error": "Booking chưa được xác nhận."})
     if booking.status == Booking.Status.CHECKED_OUT:
-        return render(request, "accounts/qr_scan_result.html", {"error": "Booking đã check-out."})
+        return render(request, "accounts/ket_qua_quet_qr.html", {"error": "Booking đã check-out."})
     with transaction.atomic():
         locked_booking = Booking.objects.select_for_update().get(pk=booking.pk)
         request_record = getattr(locked_booking, "check_in_request", None)
@@ -623,7 +666,9 @@ def room_list(request):
         if room_type:
             rooms = rooms.filter(room_type=room_type)
         if guests:
-            rooms = rooms.filter(room_type__max_guests__gte=guests)
+            # Sức chứa được tính theo tổng số phòng khách yêu cầu.
+            minimum_room_capacity = (guests + requested_quantity - 1) // requested_quantity
+            rooms = rooms.filter(room_type__max_guests__gte=minimum_room_capacity)
         room_list = []
         seen_types = set()
         for room in rooms:
@@ -648,7 +693,7 @@ def room_list(request):
                 if room.current_price is not None and room.current_price <= max_price
             ]
         rooms = room_list
-    return render(request, "accounts/room_list.html", {"form": form, "rooms": rooms})
+    return render(request, "accounts/danh_sach_phong.html", {"form": form, "rooms": rooms})
 
 #Hiển thị chi tiết phòng + xử lý đặt phòng
 def room_detail(request, room_id):
@@ -711,8 +756,13 @@ def room_detail(request, room_id):
         room.is_available = available_quantity >= data["room_quantity"]
         if available_quantity < data["room_quantity"]:
             form.add_error(None, f"Chỉ còn {available_quantity} phòng trong khoảng thời gian bạn chọn.")
-        elif data["guest_count"] > room.room_type.max_guests:
-            form.add_error("guest_count", "Số khách vượt quá sức chứa của phòng.")
+        elif data["guest_count"] > room.room_type.max_guests * data["room_quantity"]:
+            total_capacity = room.room_type.max_guests * data["room_quantity"]
+            form.add_error(
+                "guest_count",
+                f"Số khách vượt quá sức chứa của {data['room_quantity']} phòng "
+                f"(tối đa {total_capacity} khách).",
+            )
         elif price is None:
             form.add_error(None, "Phòng chưa có giá áp dụng cho thời gian này.")
         else:
@@ -728,7 +778,7 @@ def room_detail(request, room_id):
                     )
                     return render(
                         request,
-                        "accounts/room_detail.html",
+                        "accounts/chi_tiet_phong.html",
                         {"room": room, "price": price, "form": form},
                     )
                 nights = (data["check_out"] - data["check_in"]).days
@@ -781,7 +831,7 @@ def room_detail(request, room_id):
             return redirect("customer-booking-detail", booking_id=booking.pk)
     return render(
         request,
-        "accounts/room_detail.html",
+        "accounts/chi_tiet_phong.html",
         {"room": room, "price": price, "form": form},
     )
 
@@ -792,7 +842,7 @@ def customer_notifications(request):
         return redirect("login")
     notifications = Notification.objects.filter(recipient=request.customer_user)
     notifications.filter(is_read=False).update(is_read=True)
-    return render(request, "accounts/notifications.html", {"notifications": notifications})
+    return render(request, "accounts/thong_bao.html", {"notifications": notifications})
 
 # Xem/chỉnh sửa thông tin tài khoản khách hàng
 @customer_required
@@ -802,7 +852,7 @@ def customer_profile(request):
         form.save()
         messages.success(request, "Đã cập nhật thông tin tài khoản.")
         return redirect("customer-profile")
-    return render(request, "accounts/customer_profile.html", {"form": form})
+    return render(request, "accounts/ho_so_khach_hang.html", {"form": form})
 
 #đăng xuất khách hàng, xóa session và chuyển hướng về trang đăng nhập
 def customer_logout(request):
@@ -811,7 +861,7 @@ def customer_logout(request):
         return redirect("customer-home")
     return render(
         request,
-        "accounts/logout.html",
+        "accounts/dang_xuat.html",
         {"logout_area": "Customer", "cancel_url": "/customer/"},
     )
 # Trang tư vấn khách hàng
@@ -819,5 +869,5 @@ def customer_logout(request):
 def customer_consultation(request):
     return render(
         request,
-        "accounts/customer_consultation.html"
+        "accounts/tu_van_khach_hang.html"
     )

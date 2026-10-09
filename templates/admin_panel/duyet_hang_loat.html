@@ -1,0 +1,183 @@
+{% extends "admin_panel/nen_quan_tri.html" %} {% block admin_title %}Duyệt booking
+hàng loạt{% endblock %} {% block admin_heading %}Duyệt đơn hàng loạt{% endblock
+%} {% block admin_content %}
+<style>
+  .bulk-filter {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 18px;
+  }
+  .bulk-filter label {
+    display: block;
+    font-size: 11px;
+    color: #718183;
+    margin-bottom: 6px;
+  }
+  .bulk-filter select {
+    min-width: 220px;
+    padding: 10px;
+    border: 1px solid #e2e9e6;
+    border-radius: 4px;
+  }
+  .bulk-card {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e2e9e6;
+    border-radius: 5px;
+  }
+  .bulk-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .bulk-table th,
+  .bulk-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #edf1ef;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .bulk-table th {
+    color: #718183;
+    font-size: 10px;
+    font-weight: normal;
+  }
+  .bulk-actions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    margin-top: 18px;
+  }
+  .bulk-actions button {
+    padding: 11px 16px;
+    border: 0;
+    border-radius: 4px;
+    background: #126d68;
+    color: #fff;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .bulk-actions label {
+    font-size: 12px;
+    color: #718183;
+  }
+  .bulk-link {
+    color: #126d68;
+    font-size: 12px;
+    text-decoration: none;
+  }
+  @media (max-width: 650px) {
+    .bulk-filter {
+      display: block;
+    }
+    .bulk-filter > * {
+      margin-bottom: 10px;
+    }
+    .bulk-table {
+      display: block;
+      overflow: auto;
+    }
+  }
+</style>
+<form class="bulk-filter" method="get">
+  <div>
+    <label for="room-type">Lọc theo hạng phòng</label
+    ><select id="room-type" name="room_type">
+      <option value="">Tất cả hạng phòng</option>
+      {% for room_type in room_types %}
+      <option
+        value="{{ room_type.name }}"
+        {%
+        if
+        active_room_type=""
+        ="room_type.name"
+        %}selected{%
+        endif
+        %}
+      >
+        {{ room_type.name }}
+      </option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="admin-button" type="submit">Lọc</button
+  ><a class="bulk-link" href="{% url 'admin-booking-report' %}">← Về báo cáo</a>
+</form>
+<section class="bulk-card">
+  <form method="post">
+    {% csrf_token %}
+    <div style="overflow: auto">
+      <table class="bulk-table">
+        <thead>
+          <tr>
+            <th>
+              <input id="select-all" type="checkbox" aria-label="Chọn tất cả" />
+            </th>
+            <th>Mã đơn</th>
+            <th>Khách hàng</th>
+            <th>Hạng phòng</th>
+            <th>Ngày ở</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for booking in bookings %}
+          <tr>
+            <td>
+              <input
+                type="checkbox"
+                name="booking_ids"
+                value="{{ booking.pk }}"
+              />
+            </td>
+            <td>{{ booking.booking_code }}</td>
+            <td>
+              {{ booking.guest_full_name|default:booking.customer.full_name
+              }}<small
+                >{{ booking.guest_phone|default:booking.customer.phone_number
+                }}</small
+              >
+            </td>
+            <td>{{ booking.room_type }}</td>
+            <td>
+              {{ booking.check_in|date:"d/m/Y" }} - {{
+              booking.check_out|date:"d/m/Y" }}
+            </td>
+            <td>{{ booking.get_status_display }}</td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6">Không có đơn chờ xác nhận.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="bulk-actions">
+      <button type="submit">Duyệt tất cả đơn đã chọn</button
+      ><label
+        ><input id="select-all-bottom" type="checkbox" /> Chọn tất cả</label
+      >
+    </div>
+  </form>
+</section>
+<script>
+  const selectors = document.querySelectorAll('input[name="booking_ids"]');
+  const all = document.querySelectorAll("#select-all,#select-all-bottom");
+  all.forEach((box) =>
+    box.addEventListener("change", () =>
+      selectors.forEach((item) => {
+        item.checked = box.checked;
+      }),
+    ),
+  );
+  selectors.forEach((item) =>
+    item.addEventListener("change", () => {
+      all.forEach((box) => {
+        box.checked = [...selectors].every((selected) => selected.checked);
+      });
+    }),
+  );
+</script>
+{% endblock %}

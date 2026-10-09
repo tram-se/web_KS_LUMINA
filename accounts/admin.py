@@ -41,7 +41,7 @@ class UserAdmin(BaseUserAdmin):
 
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
-    change_list_template = "admin/accounts/booking/change_list.html"
+    change_list_template = "admin/accounts/booking/danh_sach_thay_doi.html"
     actions = ("approve_selected_bookings",)
     list_display = (
         "booking_code",

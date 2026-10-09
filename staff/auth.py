@@ -26,7 +26,7 @@ def staff_login(request):
             messages.success(request, "Đăng nhập khu vực Staff thành công.")
             return redirect("staff-home")
         form.add_error(None, "Tài khoản này không thuộc khu vực Staff.")
-    return render(request, "accounts/login.html", {"form": form, "login_area": "Staff"})
+    return render(request, "accounts/dang_nhap.html", {"form": form, "login_area": "Staff"})
 
 
 def staff_register(request):
@@ -37,7 +37,7 @@ def staff_register(request):
         request.session["staff_user_id"] = user.pk
         messages.success(request, "Đăng ký tài khoản Staff thành công.")
         return redirect("staff-home")
-    return render(request, "accounts/staff_register.html", {"form": form})
+    return render(request, "accounts/dang_ky_nhan_vien.html", {"form": form})
 
 
 def staff_logout(request):
@@ -46,6 +46,6 @@ def staff_logout(request):
         return redirect("staff-login")
     return render(
         request,
-        "accounts/logout.html",
+        "accounts/dang_xuat.html",
         {"logout_area": "Staff", "cancel_url": "/staff/"},
     )

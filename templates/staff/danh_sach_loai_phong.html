@@ -1,0 +1,63 @@
+{% extends "staff/nen_nhan_vien.html" %} {% load tien_te %}
+{% block staff_title %}Phòng đã đăng{% endblock %}
+{% block staff_heading %}Kiểm tra phòng đã đăng{% endblock %}
+{% block staff_content %}
+<div class="page-intro">
+  <p class="muted">
+    Theo dõi giá, trạng thái và số lượng phòng của các tin đã đăng.
+  </p>
+  <a class="button primary" href="{% url 'staff-room-create' %}"
+    >＋ Đăng phòng mới</a
+  >
+</div>
+<section class="data-card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Hạng phòng</th>
+          <th>Giá</th>
+          <th>Tổng phòng</th>
+          <th>Còn lại</th>
+          <th>Trạng thái</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for room_type in room_types %}
+        <tr>
+          <td>
+            <strong>{{ room_type.name }}</strong>
+            <small>{{ room_type.code }}</small>
+          </td>
+          <td>
+            {% with price=room_type.prices.first %}
+              {% if price %}
+                {{ price.price|vnd }} /
+                {{ price.get_unit_display }}
+              {% endif %}
+              {% if not price %}Chưa có giá{% endif %}
+            {% endwith %}
+          </td>
+          <td>{{ room_type.rooms.count }}</td>
+          <td>{{ room_type.available_quantity|default:room_type.rooms.count }}</td>
+          <td>{{ room_type.get_listing_status_display }}</td>
+          <td>
+            <a
+              class="icon-button"
+              title="Chỉnh sửa"
+              href="{% url 'staff-room-edit' room_type.pk %}"
+              >Sửa</a
+            >
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="empty">Chưa có phòng đã đăng.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

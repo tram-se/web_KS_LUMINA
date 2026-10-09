@@ -147,7 +147,7 @@ class MultipleImageField(forms.FileField):
 
 class RoomListingForm(forms.ModelForm):
     price = forms.DecimalField(
-        label="Giá phòng", min_value=0, max_digits=12, decimal_places=0
+        label="Giá phòng (nghìn VND)", min_value=0, max_digits=12, decimal_places=0
     )
     price_unit = forms.ChoiceField(
         label="Đơn vị giá",
@@ -212,7 +212,7 @@ class RoomListingEditForm(RoomListingForm):
         self.fields["room_prefix"].initial = first_number.rsplit("-", 1)[0]
         price = room_type.prices.filter(is_active=True).first()
         if price:
-            self.fields["price"].initial = price.price
+            self.fields["price"].initial = price.price / 1000
             self.fields["price_unit"].initial = price.unit
 
     def clean_room_prefix(self):

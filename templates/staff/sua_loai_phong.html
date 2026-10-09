@@ -1,0 +1,68 @@
+{% extends "staff/nen_nhan_vien.html" %}
+{% block staff_title %}Sửa phòng{% endblock %}
+{% block staff_heading %}Chỉnh sửa {{ room_type.name }}{% endblock %}
+{% block staff_content %}
+<section class="data-card">
+  <form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    <div class="form-errors">{{ form.non_field_errors }}</div>
+    <div class="form-grid">
+      {% for field in form %}
+      <div class="form-field">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>{{ field }}
+        {% for error in field.errors %}<small class="form-errors"
+          >{{ error }}</small
+        >{% endfor %}
+      </div>
+      {% endfor %}
+    </div>
+    <h3>Ảnh hiện tại</h3>
+    <div class="image-gallery">
+      {% for image in room_type.images.all %}
+      <label
+        ><img src="{{ image.image.url }}" alt="Ảnh {{ room_type.name }}" /><span
+          ><input type="checkbox" name="delete_images" value="{{ image.pk }}" />
+          Xóa ảnh</span
+        ></label>
+      {% endfor %}
+    </div>
+    <button class="button primary" type="submit">Lưu thay đổi</button>
+  </form>
+</section>
+<script>
+  const input = document.getElementById("id_images");
+  if (input)
+    input.addEventListener("change", () => {
+      let preview = document.getElementById("image-preview");
+      if (!preview) {
+        preview = document.createElement("div");
+        preview.id = "image-preview";
+        input.parentElement.appendChild(preview);
+      }
+      preview.innerHTML = "";
+      const files = [...input.files];
+      files.forEach((file, index) => {
+        if (!file.type.startsWith("image/")) return;
+        const item = document.createElement("span");
+        const image = document.createElement("img");
+        image.src = URL.createObjectURL(file);
+        image.alt = file.name;
+        image.style.cssText =
+          "width:110px;height:80px;object-fit:cover;margin:8px 8px 0 0";
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "Xóa";
+        remove.onclick = () => {
+          const transfer = new DataTransfer();
+          files.forEach((current, currentIndex) => {
+            if (currentIndex !== index) transfer.items.add(current);
+          });
+          input.files = transfer.files;
+          input.dispatchEvent(new Event("change"));
+        };
+        item.append(image, remove);
+        preview.appendChild(item);
+      });
+    });
+</script>
+{% endblock %}

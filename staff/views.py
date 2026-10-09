@@ -60,7 +60,7 @@ def staff_home(request):
             status=ConsultationRequest.Status.NEW
         )[:4],
     }
-    return render(request, "staff/staff_home.html", context)
+    return render(request, "staff/trang_chu_nhan_vien.html", context)
 
 
 # Thông báo Staff – lấy thông báo và tự đánh dấu đã đọc
@@ -68,7 +68,7 @@ def staff_home(request):
 def staff_notifications(request):
     notifications = Notification.objects.filter(recipient=request.staff_user)
     notifications.filter(is_read=False).update(is_read=True)
-    return render(request, "staff/staff_notifications.html", {"notifications": notifications})
+    return render(request, "staff/thong_bao_nhan_vien.html", {"notifications": notifications})
 
 
 # Quản lý đặt phòng
@@ -97,7 +97,7 @@ def staff_bookings(request):
         schedule["bookings"].append(booking)
     return render(
         request,
-        "staff/staff_bookings.html",
+        "staff/danh_sach_dat_phong.html",
         {
             "bookings": bookings,
             "active_status": status,
@@ -264,7 +264,7 @@ def staff_room_map(request):
 
     return render(
         request,
-        "staff/staff_room_map.html",
+        "staff/so_do_phong.html",
         {
             "window_start": window_start,
             "window_end": window_end,
@@ -313,7 +313,7 @@ def staff_room_create(request):
 
             RoomPrice.objects.create(
                 room_type=room_type,
-                price=form.cleaned_data["price"],
+                price=form.cleaned_data["price"] * 1000,
                 unit=form.cleaned_data["price_unit"],
                 valid_from=date.today(),
             )
@@ -341,7 +341,7 @@ def staff_room_create(request):
 
     return render(
         request,
-        "staff/staff_room_create.html",
+        "staff/tao_loai_phong.html",
         {"form": form},
     )
 # Danh sách phòng
@@ -355,7 +355,7 @@ def staff_rooms(request):
             .distinct()
             .count()
         )
-    return render(request, "staff/staff_rooms.html", {"room_types": rooms})
+    return render(request, "staff/danh_sach_loai_phong.html", {"room_types": rooms})
 
 
 # Chỉnh sửa phòng
@@ -371,7 +371,7 @@ def staff_room_edit(request, room_type_id):
             price = room_type.prices.filter(is_active=True).first()
             if price is None:
                 price = RoomPrice(room_type=room_type, valid_from=timezone.localdate())
-            price.price = form.cleaned_data["price"]
+            price.price = form.cleaned_data["price"] * 1000
             price.unit = form.cleaned_data["price_unit"]
             price.save()
             rooms = list(room_type.rooms.order_by("number"))
@@ -401,7 +401,7 @@ def staff_room_edit(request, room_type_id):
         messages.success(request, "Đã cập nhật thông tin phòng.")
         return redirect("staff-room-edit", room_type_id=room_type.pk)
     return render(
-        request, "staff/staff_room_edit.html", {"form": form, "room_type": room_type}
+        request, "staff/sua_loai_phong.html", {"form": form, "room_type": room_type}
     )
 
 
@@ -465,7 +465,7 @@ def staff_booking_detail(request, booking_id):
 
     return render(
         request,
-        "staff/staff_booking_detail.html",
+        "staff/chi_tiet_dat_phong_nhan_vien.html",
         {
             "booking": booking,
             "form": form,
@@ -535,7 +535,7 @@ def staff_customers(request):
         )
     return render(
         request,
-        "staff/staff_customers.html",
+        "staff/danh_sach_khach_hang.html",
         {"customers": customers.distinct(), "query": query},
     )
 
@@ -551,7 +551,7 @@ def staff_customer_detail(request, customer_id):
         return redirect("staff-customer-detail", customer_id=customer.pk)
     return render(
         request,
-        "staff/staff_customer_detail.html",
+        "staff/chi_tiet_khach_hang.html",
         {"customer": customer, "form": form, "bookings": customer.bookings.all()[:5]},
     )
 
@@ -715,8 +715,6 @@ def staff_consultations(request, room_id=None):
 
     if room_id:
         active_room = get_object_or_404(ChatRoom, id=room_id)
-    elif rooms.exists():
-        active_room = rooms.first()
 
     if active_room:
         messages_list = ChatMessage.objects.filter(room=active_room).order_by('created_at')
@@ -751,7 +749,7 @@ def staff_consultations(request, room_id=None):
 
             return redirect('staff-consultations-detail', room_id=active_room.id)
 
-    return render(request, 'staff/staff_consultations.html', {
+    return render(request, 'staff/tu_van_khach_hang.html', {
         'rooms': rooms,
         'active_room': active_room,
         'messages': messages_list,
@@ -793,4 +791,3 @@ def api_get_room_messages(request, room_id):
         "customer_phone": room.display_phone,
         "messages": msg_data
     })
-

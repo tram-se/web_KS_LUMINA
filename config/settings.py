@@ -9,7 +9,7 @@ DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() == "true"
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get(
-        "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,192.168.1.13"
+        "DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost,192.168.1.14"
     ).split(",")
     if host.strip()
 ]
@@ -87,7 +87,7 @@ PAYMENT_BANK_ACCOUNT = os.environ.get("PAYMENT_BANK_ACCOUNT", "0123456789")
 PAYMENT_BANK_ACCOUNT_NAME = os.environ.get("PAYMENT_BANK_ACCOUNT_NAME", "LUMINA HOTEL")
 PAYMENT_WEBHOOK_TOKEN = os.environ.get("PAYMENT_WEBHOOK_TOKEN", "")
 PUBLIC_BASE_URL = os.environ.get(
-    "PUBLIC_BASE_URL", "http://192.168.1.13:8000"
+    "PUBLIC_BASE_URL", "http://192.168.1.14:8000"
 ).rstrip("/")
 MOMO_QR_IMAGE = os.environ.get("MOMO_QR_IMAGE", "payment/momo.jpg")
 MOMO_PARTNER_CODE = os.environ.get("MOMO_PARTNER_CODE", "")

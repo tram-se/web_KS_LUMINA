@@ -38,7 +38,7 @@ def admin_home(request):
         "recent_bookings": Booking.objects.select_related("customer")[:5],
         "room_statuses": Room.Status.choices,
     }
-    return render(request, "admin_panel/admin_home.html", context)
+    return render(request, "admin_panel/trang_chu_quan_tri.html", context)
 
 
 def _month_bounds(request):
@@ -112,7 +112,7 @@ def admin_booking_report(request):
         "cancelled_count": bookings.filter(status=Booking.Status.CANCELLED).count(),
         "daily_stats": daily_stats,
     }
-    return render(request, "admin_panel/booking_report.html", context)
+    return render(request, "admin_panel/bao_cao_dat_phong.html", context)
 
 
 @admin_required
@@ -174,7 +174,7 @@ def admin_bulk_approve(request):
     )
     return render(
         request,
-        "admin_panel/bulk_approve.html",
+        "admin_panel/duyet_hang_loat.html",
         {
             "bookings": pending,
             "room_types": room_types,

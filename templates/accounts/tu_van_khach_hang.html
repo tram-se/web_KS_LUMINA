@@ -1,0 +1,449 @@
+{% extends "accounts/nen_khach_hang.html" %}
+
+{% block customer_title %}Hỗ trợ & Thông báo{% endblock %}
+
+{% block customer_content %}
+
+<style>
+    /* Khung Chat cố định kiểu Facebook Messenger */
+    .chat-widget-container {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        width: 380px;
+        max-width: calc(100vw - 32px);
+        height: 520px;
+        max-height: calc(100vh - 100px);
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18), 0 2px 6px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        z-index: 999999;
+        overflow: hidden;
+        border: 1px solid var(--customer-line, #dce8e3);
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    /* Header khung chat */
+    .chat-header {
+        background: var(--customer-teal, #087d73);
+        color: #ffffff;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .chat-header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .chat-avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: #ffffff;
+        color: var(--customer-teal, #087d73);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .chat-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0;
+        line-height: 1.2;
+    }
+
+    .chat-status {
+        font-size: 11px;
+        opacity: 0.85;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .chat-status-dot {
+        width: 7px;
+        height: 7px;
+        background-color: #2eb82e;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .chat-close-btn {
+        color: #ffffff;
+        text-decoration: none;
+        font-size: 20px;
+        font-weight: bold;
+        line-height: 1;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }
+
+    .chat-close-btn:hover {
+        opacity: 1;
+    }
+
+    /* Thân khung chat - Danh sách tin nhắn */
+    .chat-body {
+        flex: 1;
+        padding: 16px;
+        overflow-y: auto;
+        background-color: #f8faf9;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .chat-message {
+        display: flex;
+        flex-direction: column;
+        max-width: 80%;
+    }
+
+    /* Tin nhắn từ Hỗ trợ/Hệ thống (Bên trái) */
+    .chat-message.incoming {
+        align-self: flex-start;
+    }
+
+    .chat-message.incoming .message-bubble {
+        background: #ffffff;
+        color: #1c252e;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px 16px 16px 4px;
+    }
+
+    /* Tin nhắn người dùng gửi (Bên phải) */
+    .chat-message.outgoing {
+        align-self: flex-end;
+    }
+
+    .chat-message.outgoing .message-bubble {
+        background: var(--customer-teal, #087d73);
+        color: #ffffff;
+        border-radius: 16px 16px 4px 16px;
+    }
+
+    .message-bubble {
+        padding: 10px 14px;
+        font-size: 13px;
+        line-height: 1.45;
+        word-break: break-word;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .message-time {
+        font-size: 10px;
+        color: #8c9ba5;
+        margin-top: 4px;
+        align-self: flex-end;
+    }
+
+    .chat-message.incoming .message-time {
+        align-self: flex-start;
+    }
+
+    .unread-tag {
+        display: inline-block;
+        font-size: 9px;
+        background: #e9c778;
+        color: #4f3b19;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: bold;
+        margin-bottom: 4px;
+        align-self: flex-start;
+    }
+
+    /* Khung nhập tin nhắn */
+    .chat-footer {
+        padding: 10px 12px;
+        background: #ffffff;
+        border-top: 1px solid #edf2f7;
+    }
+
+    .chat-input-form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .chat-input {
+        flex: 1;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        padding: 8px 14px;
+        font-size: 13px;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+
+    .chat-input:focus {
+        border-color: var(--customer-teal, #087d73);
+    }
+
+    .chat-send-btn {
+        background: var(--customer-teal, #087d73);
+        color: #ffffff;
+        border: none;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background 0.2s;
+        flex-shrink: 0;
+    }
+
+    .chat-send-btn:hover {
+        background: #06635b;
+    }
+
+    .chat-send-btn svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+
+    .chat-empty {
+        text-align: center;
+        color: #a0aec0;
+        font-size: 13px;
+        margin: auto 0;
+    }
+
+    @media (max-width: 480px) {
+        .chat-widget-container {
+            right: 12px;
+            bottom: 12px;
+            width: calc(100vw - 24px);
+            height: 480px;
+        }
+    }
+</style>
+
+<!-- KHUNG CHAT MESSENGER NỔI Ở GÓC DƯỚI BÊN PHẢI -->
+<div class="chat-widget-container">
+    
+    <!-- Header -->
+    <div class="chat-header">
+        <div class="chat-header-info">
+            <div class="chat-avatar">L</div>
+            <div>
+                <div class="chat-title">Lumina Support</div>
+                <div class="chat-status">
+                    <span class="chat-status-dot"></span> Đang hoạt động
+                </div>
+            </div>
+        </div>
+        <a href="{% url 'customer-home' %}" class="chat-close-btn" title="Đóng">&times;</a>
+    </div>
+
+    <!-- Nội dung tin nhắn / thông báo -->
+    <div class="chat-body" id="chatBody">
+        <div class="chat-empty" id="chatEmpty">
+            <p>Chưa có tin nhắn mới.</p>
+        </div>
+    </div>
+
+    <!-- Ô nhập tin nhắn gửi phản hồi -->
+    <div class="chat-footer">
+        <form class="chat-input-form" id="chatForm">
+            <input type="text" class="chat-input" placeholder="Nhập tin nhắn..." id="chatInput" autocomplete="off">
+            <button type="submit" class="chat-send-btn" aria-label="Gửi">
+                <svg viewBox="0 0 24 24">
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"></path>
+                </svg>
+            </button>
+        </form>
+    </div>
+
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var chatBody = document.getElementById("chatBody");
+        var chatForm = document.getElementById("chatForm");
+        var chatInput = document.getElementById("chatInput");
+        var chatEmpty = document.getElementById("chatEmpty");
+        let loadedMsgIds = new Set();
+        let historyInitialized = false;
+
+        function scrollToBottom() {
+            if (chatBody) {
+                chatBody.scrollTop = chatBody.scrollHeight;
+            }
+        }
+
+        function escapeHtml(string) {
+            return String(string).replace(/[&<>"']/g, function(s) {
+                return {
+                    "&": "&amp;",
+                    "<": "&lt;",
+                    ">": "&gt;",
+                    '"': "&quot;",
+                    "'": "&#39;"
+                }[s];
+            });
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function renderMessages(messages) {
+            if (!messages || messages.length === 0) return;
+            if (chatEmpty) chatEmpty.style.display = "none";
+
+            let newAdded = false;
+            messages.forEach(msg => {
+                if (!loadedMsgIds.has(msg.id)) {
+                    loadedMsgIds.add(msg.id);
+                    newAdded = true;
+
+                    const msgDiv = document.createElement("div");
+                    msgDiv.className = "chat-message " + (msg.is_from_customer ? "outgoing" : "incoming");
+                    msgDiv.innerHTML = `
+                        <div class="message-bubble">${formatMessageText(msg.message)}</div>
+                        <span class="message-time">${escapeHtml(msg.time_short || msg.created_at)}</span>
+                    `;
+                    chatBody.appendChild(msgDiv);
+                }
+            });
+
+            if (newAdded) {
+                scrollToBottom();
+            }
+        }
+
+        function fetchChatHistory() {
+            fetch("/api/get-chat/")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "ok" && data.messages) {
+                        if (!historyInitialized) {
+                            data.messages.forEach(msg => loadedMsgIds.add(msg.id));
+                            historyInitialized = true;
+                            return;
+                        }
+                        renderMessages(data.messages);
+                    }
+                })
+                .catch(err => console.error("Lỗi tải tin nhắn:", err));
+        }
+
+        fetchChatHistory();
+        setInterval(fetchChatHistory, 3000);
+
+        if (chatForm) {
+            chatForm.addEventListener("submit", function(e) {
+                e.preventDefault();
+                var text = chatInput.value.trim();
+                if (!text) return;
+
+                chatInput.value = "";
+
+                fetch("/api/send-chat/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCookie("csrftoken")
+                    },
+                    body: JSON.stringify({ message: text })
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === "ok") {
+                        if (data.messages) {
+                            renderMessages(data.messages);
+                        }
+                        fetchChatHistory();
+                    }
+                })
+                .catch(err => console.error("Lỗi gửi tin nhắn:", err));
+            });
+        }
+
+        function buildHtmlTable(rows) {
+            if (!rows || rows.length === 0) return "";
+            let html = '<div style="overflow-x:auto; margin: 8px 0;"><table style="width:100%; border-collapse:collapse; font-size:11px; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; font-family:sans-serif; color:#1e293b;">';
+            html += '<thead><tr style="background:#f1f5f9; color:#0f172a;">';
+            rows[0].forEach(cell => {
+                html += `<th style="padding:6px 8px; border:1px solid #cbd5e1; text-align:left; font-weight:bold;">${cell}</th>`;
+            });
+            html += '</tr></thead><tbody>';
+            for (let r = 1; r < rows.length; r++) {
+                html += `<tr style="${r % 2 === 0 ? 'background:#f8fafc;' : ''}">`;
+                rows[r].forEach(cell => {
+                    html += `<td style="padding:6px 8px; border:1px solid #cbd5e1;">${cell}</td>`;
+                });
+                html += '</tr>';
+            }
+            html += '</tbody></table></div>';
+            return html;
+        }
+
+        function formatMessageText(text) {
+            if (!text) return "";
+            let esc = escapeHtml(text);
+
+            const lines = esc.split("\n");
+            let inTable = false;
+            let htmlLines = [];
+            let tableRows = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                let line = lines[i].trim();
+                if (line.startsWith("|") && line.endsWith("|")) {
+                    if (!inTable) {
+                        inTable = true;
+                        tableRows = [];
+                    }
+                    if (line.replace(/[\s|:-]/g, "") === "") {
+                        continue;
+                    }
+                    const cells = line.split("|").slice(1, -1).map(c => c.trim());
+                    tableRows.push(cells);
+                } else {
+                    if (inTable) {
+                        htmlLines.push(buildHtmlTable(tableRows));
+                        inTable = false;
+                        tableRows = [];
+                    }
+                    htmlLines.push(line);
+                }
+            }
+            if (inTable) {
+                htmlLines.push(buildHtmlTable(tableRows));
+            }
+
+            let result = htmlLines.join("\n");
+            result = result.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            result = result.replace(/\n/g, '<br>');
+            return result;
+        }
+    });
+</script>
+
+{% endblock %}

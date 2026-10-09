@@ -5,6 +5,12 @@ import sys
 
 def main():
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+    if (
+        len(sys.argv) >= 2
+        and sys.argv[1] == "runserver"
+        and not any(arg and not arg.startswith("-") for arg in sys.argv[2:])
+    ):
+        sys.argv.append("0.0.0.0:8000")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

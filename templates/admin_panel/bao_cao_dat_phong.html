@@ -1,0 +1,264 @@
+{% extends "admin_panel/nen_quan_tri.html" %} {% load tien_te %} {% block admin_title %}Thống kê
+booking{% endblock %} {% block admin_heading %}Thống kê đặt phòng{% endblock %}
+{% block admin_content %}
+<style>
+  .report-filter,
+  .report-grid,
+  .report-layout {
+    display: grid;
+    gap: 14px;
+  }
+  .report-filter {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+    margin-bottom: 18px;
+  }
+  .report-filter label {
+    display: block;
+    font-size: 11px;
+    color: #718183;
+    margin-bottom: 6px;
+  }
+  .report-filter select,
+  .report-filter input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    border: 1px solid #e2e9e6;
+    border-radius: 4px;
+  }
+  .report-grid {
+    grid-template-columns: repeat(4, 1fr);
+    margin-bottom: 18px;
+  }
+  .report-stat {
+    padding: 18px;
+    background: #fff;
+    border: 1px solid #e2e9e6;
+    border-radius: 5px;
+  }
+  .report-stat p {
+    margin: 0 0 8px;
+    color: #718183;
+    font-size: 11px;
+  }
+  .report-stat strong {
+    font:
+      normal 25px Georgia,
+      serif;
+  }
+  .report-stat small {
+    display: block;
+    margin-top: 7px;
+    color: #718183;
+    font-size: 11px;
+  }
+  .report-layout {
+    grid-template-columns: 1.2fr 1fr;
+  }
+  .report-card {
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #e2e9e6;
+    border-radius: 5px;
+  }
+  .report-card h2 {
+    margin: 0 0 18px;
+    font:
+      normal 20px Georgia,
+      serif;
+  }
+  .chart-row {
+    display: grid;
+    grid-template-columns: 32px 1fr 65px;
+    gap: 8px;
+    align-items: center;
+    margin: 7px 0;
+    font-size: 11px;
+  }
+  .chart-bar {
+    height: 12px;
+    background: #d7e9e2;
+  }
+  .chart-bar span {
+    display: block;
+    height: 100%;
+    background: #126d68;
+  }
+  .report-table {
+    overflow: auto;
+  }
+  .report-table table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .report-table th,
+  .report-table td {
+    padding: 10px 7px;
+    border-bottom: 1px solid #edf1ef;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .report-table th {
+    color: #718183;
+    font-size: 10px;
+    font-weight: normal;
+  }
+  .status-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+  .status-counts span {
+    padding: 8px 10px;
+    background: #f2f6f4;
+    font-size: 11px;
+  }
+  .report-link {
+    color: #126d68;
+    font-size: 12px;
+    text-decoration: none;
+  }
+  @media (max-width: 900px) {
+    .report-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .report-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 600px) {
+    .report-filter {
+      grid-template-columns: 1fr;
+    }
+    .report-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+<form class="report-filter" method="get">
+  <div>
+    <label for="month">Tháng</label
+    ><input
+      id="month"
+      type="number"
+      name="month"
+      min="1"
+      max="12"
+      value="{{ month_start.month }}"
+    />
+  </div>
+  <div>
+    <label for="year">Năm</label
+    ><input
+      id="year"
+      type="number"
+      name="year"
+      min="2000"
+      max="2100"
+      value="{{ month_start.year }}"
+    />
+  </div>
+  <button class="admin-button" type="submit">Xem báo cáo</button>
+</form>
+<div class="report-grid">
+  <div class="report-stat">
+    <p>Tổng booking</p>
+    <strong>{{ total_bookings }}</strong
+    ><small>Trong tháng {{ month_start|date:"m/Y" }}</small>
+  </div>
+  <div class="report-stat">
+    <p>Doanh thu dự kiến</p>
+    <strong>{{ revenue_expected|vnd }}</strong
+    ><small>Không tính đơn đã hủy</small>
+  </div>
+  <div class="report-stat">
+    <p>Doanh thu thực tế</p>
+    <strong>{{ revenue_actual|vnd }}</strong
+    ><small>Đơn đã xác nhận</small>
+  </div>
+  <div class="report-stat">
+    <p>Tỷ lệ lấp đầy</p>
+    <strong>{{ occupancy_rate }}%</strong
+    ><small>{{ booked_rooms }} đã đặt · {{ available_rooms }} còn trống</small>
+  </div>
+</div>
+<div class="report-layout">
+  <section class="report-card">
+    <h2>Trạng thái đơn</h2>
+    <div class="status-counts">
+      <span>Chờ xác nhận: <b>{{ pending_count }}</b></span
+      ><span>Đã xác nhận: <b>{{ confirmed_count }}</b></span
+      ><span>Đã hủy: <b>{{ cancelled_count }}</b></span>
+    </div>
+    <h2 style="margin-top: 28px">Booking theo ngày</h2>
+    {% for item in daily_stats %}
+    <div class="chart-row">
+      <span>{{ item.day }}</span>
+      <div class="chart-bar">
+        <span
+          style="width:{% widthratio item.count total_bookings 100 %}%"
+        ></span>
+      </div>
+      <b>{{ item.count }}</b>
+    </div>
+    {% endfor %}
+  </section>
+  <section class="report-card">
+    <h2>Duyệt đơn chờ</h2>
+    <p style="color: #718183; font-size: 12px">
+      Tự động gán phòng trống theo từng hạng phòng.
+    </p>
+    <a class="report-link" href="{% url 'admin-bulk-approve' %}"
+      >Mở màn hình duyệt hàng loạt →</a
+    >
+  </section>
+</div>
+<section class="report-card" style="margin-top: 18px">
+  <h2>Chi tiết booking</h2>
+  <div class="report-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Mã đơn</th>
+          <th>Khách hàng</th>
+          <th>SĐT</th>
+          <th>CCCD</th>
+          <th>Hạng phòng</th>
+          <th>Phòng</th>
+          <th>Nhận - trả</th>
+          <th>Tổng tiền</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for booking in bookings %}
+        <tr>
+          <td>{{ booking.booking_code }}</td>
+          <td>
+            {{ booking.guest_full_name|default:booking.customer.full_name }}
+          </td>
+          <td>
+            {{ booking.guest_phone|default:booking.customer.phone_number }}
+          </td>
+          <td>{{ booking.guest_id_number|default:"-" }}</td>
+          <td>{{ booking.room_type }}</td>
+          <td>{{ booking.room.number|default:"Chưa gán" }}</td>
+          <td>
+            {{ booking.check_in|date:"d/m/Y" }} - {{
+            booking.check_out|date:"d/m/Y" }}
+          </td>
+          <td>{{ booking.total_price|vnd }}</td>
+          <td>{{ booking.get_status_display }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9">Không có booking trong tháng.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

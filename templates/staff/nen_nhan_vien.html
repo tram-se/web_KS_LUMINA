@@ -1,0 +1,816 @@
+{% extends "nen.html" %} {% block title %} {% block staff_title %}Staff
+workspace{% endblock %} | Lumina {% endblock %} {% block content %}
+<style>
+  :root {
+    --ink: #162426;
+    --muted: #788587;
+    --line: #e4e9e7;
+    --paper: #f7f9f7;
+    --teal: #146b68;
+    --mint: #dff1e9;
+    --gold: #e8b45b;
+    --red: #a94f4f;
+  }
+  body {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Trebuchet MS", Arial, sans-serif;
+  }
+  body > nav,
+  body > p {
+    display: none;
+  }
+  .staff-shell {
+    display: flex;
+    min-height: 100vh;
+  }
+  .staff-sidebar {
+    width: 250px;
+    background: #132c2e;
+    color: #d9e5e0;
+    padding: 28px 18px;
+    display: flex;
+    flex-direction: column;
+  }
+  .staff-brand {
+    display: flex;
+    gap: 11px;
+    align-items: center;
+    font:
+      700 17px Georgia,
+      serif;
+    letter-spacing: 2px;
+    color: #f3eee0;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #d5b36b;
+    color: #d5b36b;
+    font: italic 24px Georgia;
+    border-radius: 50%;
+  }
+  .staff-brand small {
+    font: 9px Arial;
+    letter-spacing: 3px;
+    color: #a7bfba;
+  }
+  .eyebrow {
+    font-size: 10px;
+    letter-spacing: 1.8px;
+    font-weight: bold;
+    color: #91a29f;
+    margin: 0 0 12px;
+  }
+  .staff-sidebar .eyebrow {
+    margin: 55px 12px 12px;
+    color: #70918d;
+  }
+  .side-link {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 13px 12px;
+    margin: 3px 0;
+    color: #a9bfba;
+    text-decoration: none;
+    font-size: 13px;
+    border-radius: 5px;
+  }
+  .side-link span {
+    width: 18px;
+    text-align: center;
+    font-size: 17px;
+  }
+  .side-link:hover,
+  .side-link.active {
+    background: #23494a;
+    color: #fff;
+  }
+  .sidebar-bottom {
+    margin-top: auto;
+    border-top: 1px solid #315052;
+    padding: 20px 6px 0;
+  }
+  .profile-mini {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    font-size: 12px;
+  }
+  .profile-mini b,
+  .profile-mini small {
+    display: block;
+  }
+  .profile-mini small {
+    color: #8ea8a3;
+    margin-top: 4px;
+  }
+  .avatar {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: #d1a55b;
+    color: #233537;
+    font-weight: bold;
+  }
+  .avatar.soft {
+    background: #d9ece5;
+    color: #166663;
+  }
+  .avatar.large {
+    width: 60px;
+    height: 60px;
+    font-size: 22px;
+  }
+  .logout-link {
+    color: #9eb4b0;
+    background: transparent;
+    border: 0;
+    padding: 18px 0 0;
+    font-size: 12px;
+  }
+  .staff-content {
+    flex: 1;
+    padding: 38px 5%;
+    max-width: 1450px;
+  }
+  .staff-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+  }
+  .staff-topbar h1 {
+    font:
+      normal 32px "Segoe UI",
+      Arial,
+      sans-serif;
+    margin: 0;
+  }
+  .topbar-date {
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    background: #55a475;
+    border-radius: 50%;
+    margin-left: 10px;
+  }
+  .welcome-row,
+  .card-heading,
+  .page-intro {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+  .muted {
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .button {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    border: 0;
+    padding: 12px 16px;
+    border-radius: 4px;
+    font-weight: bold;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .button.primary {
+    background: var(--teal);
+    color: white;
+  }
+  .button.secondary {
+    background: white;
+    color: var(--teal);
+    border: 1px solid var(--line);
+  }
+  .button.call {
+    background: #e9f4ee;
+    color: var(--teal);
+    margin-top: 12px;
+  }
+  .full {
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin: 28px 0;
+  }
+  .kpi-card,
+  .data-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+  }
+  .kpi-card {
+    padding: 18px 20px;
+    position: relative;
+  }
+  .kpi-card.accent {
+    border-top: 3px solid var(--gold);
+  }
+  .kpi-icon {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    background: #fff2d8;
+    color: #aa791d;
+    border-radius: 50%;
+    font-size: 17px;
+    float: right;
+  }
+  .kpi-icon.green {
+    background: #e1f3ea;
+    color: #3c8b61;
+  }
+  .kpi-icon.orange {
+    background: #fff0dc;
+    color: #bb7c2b;
+  }
+  .kpi-icon.blue {
+    background: #e1eef3;
+    color: #3d7890;
+  }
+  .kpi-card p {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 14px;
+  }
+  .kpi-card strong {
+    display: block;
+    font:
+      normal 30px Georgia,
+      serif;
+  }
+  .kpi-card small {
+    color: #98a4a4;
+    font-size: 11px;
+  }
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 18px;
+  }
+  .data-card {
+    padding: 22px;
+  }
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .form-field.wide {
+    grid-column: 1 / -1;
+  }
+  .form-field label {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .form-field input,
+  .form-field select,
+  .form-field textarea {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font: inherit;
+  }
+  .form-field select[multiple] {
+    min-height: 110px;
+  }
+  .form-errors {
+    display: block;
+    color: var(--red);
+    font-size: 12px;
+    margin-top: 5px;
+  }
+  .card-heading {
+    margin-bottom: 18px;
+  }
+  .card-heading h2,
+  .action-card h2,
+  .detail-main h2 {
+    font:
+      normal 21px Georgia,
+      serif;
+    margin: 0;
+  }
+  .card-heading a,
+  .info-grid a,
+  .back-link,
+  .phone-link {
+    color: var(--teal);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  th {
+    text-align: left;
+    color: #98a3a2;
+    font-size: 10px;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    font-weight: normal;
+    padding: 10px 9px;
+    border-bottom: 1px solid var(--line);
+  }
+  td {
+    padding: 14px 9px;
+    border-bottom: 1px solid #edf0ef;
+    white-space: nowrap;
+  }
+  td small,
+  .consult-item small,
+  .info-grid small,
+  .note-box small {
+    display: block;
+    color: #9aa5a4;
+    font-size: 10px;
+    margin-top: 5px;
+  }
+  .strong {
+    font-weight: bold;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .badge {
+    display: inline-block;
+    padding: 5px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+  }
+  .pending,
+  .new {
+    color: #9a6d18;
+    background: #fff2d8;
+  }
+  .confirmed,
+  .contacted {
+    color: #27774d;
+    background: #e1f3ea;
+  }
+  .cancelled,
+  .closed {
+    color: #a94f4f;
+    background: #f9e6e4;
+  }
+  .consult-list {
+    display: grid;
+  }
+  .consult-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 13px 0;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .consult-item > span:nth-child(2) {
+    flex: 1;
+  }
+  .arrow {
+    color: var(--teal);
+  }
+  .empty {
+    padding: 35px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .toast {
+    background: #e4f5eb;
+    color: #29764d;
+    padding: 12px 15px;
+    border-left: 3px solid #52a373;
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  .filter-bar {
+    display: flex;
+    gap: 5px;
+    margin: 25px 0 15px;
+    border-bottom: 1px solid var(--line);
+  }
+  .filter {
+    padding: 10px 15px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 12px;
+  }
+  .filter.selected {
+    color: var(--teal);
+    border-bottom: 2px solid var(--teal);
+    font-weight: bold;
+  }
+  .icon-button {
+    color: var(--teal);
+    text-decoration: none;
+    font-size: 18px;
+  }
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1.5fr 0.8fr;
+    gap: 18px;
+    margin-top: 24px;
+  }
+  .detail-header,
+  .profile-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 22px;
+    margin-bottom: 22px;
+  }
+  .profile-header {
+    justify-content: flex-start;
+    align-items: center;
+  }
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 22px;
+    margin-bottom: 25px;
+  }
+  .info-grid b {
+    display: block;
+    margin-top: 8px;
+    font-size: 13px;
+  }
+  .note-box {
+    background: #f5f8f6;
+    padding: 15px;
+    margin-top: 10px;
+    font-size: 13px;
+  }
+  .note-box p {
+    margin: 8px 0 0;
+    line-height: 1.6;
+  }
+  .action-card form p {
+    margin: 16px 0;
+  }
+  .action-card label {
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: bold;
+  }
+  .action-card input,
+  .action-card select,
+  .action-card textarea,
+  .search-form input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid var(--line);
+    padding: 11px;
+    margin-top: 7px;
+    font: inherit;
+    font-size: 12px;
+    background: #fff;
+    border-radius: 3px;
+  }
+  .search-form {
+    display: flex;
+    gap: 8px;
+    min-width: min(100%, 390px);
+  }
+  .search-form input {
+    margin: 0;
+  }
+  .search-form .button {
+    white-space: nowrap;
+  }
+  .customer-cell {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .mini-list a {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+    color: var(--ink);
+    font-size: 12px;
+  }
+  .mini-list a span {
+    color: var(--muted);
+  }
+  .consult-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 25px;
+  }
+  .consult-card {
+    background: #fff;
+    border: 1px solid var(--line);
+    padding: 20px;
+    text-decoration: none;
+    color: var(--ink);
+    border-radius: 5px;
+  }
+  .consult-card:hover {
+    border-color: #8ab9ac;
+  }
+  .consult-top,
+  .consult-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .consult-card h3 {
+    font:
+      normal 20px Georgia,
+      serif;
+    margin: 22px 0 8px;
+  }
+  .phone {
+    color: var(--teal);
+    font-size: 13px;
+  }
+  .consult-card p {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    min-height: 40px;
+  }
+  .consult-footer {
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .card-heading h2 {
+    font-family: "Segoe UI", Arial, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  @media (max-width: 900px) {
+    .staff-sidebar {
+      width: 205px;
+    }
+    .staff-content {
+      padding: 28px 3%;
+    }
+    .kpi-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .dashboard-grid,
+    .detail-grid {
+      grid-template-columns: 1fr;
+    }
+    .consult-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 620px) {
+    .staff-shell {
+      display: block;
+    }
+    .staff-sidebar {
+      width: auto;
+      min-height: auto;
+      padding: 18px;
+    }
+    .staff-sidebar .eyebrow,
+    .sidebar-bottom {
+      display: none;
+    }
+    .side-link {
+      display: inline-flex;
+      margin: 12px 2px 0;
+      padding: 8px;
+    }
+    .side-link span {
+      display: none;
+    }
+    .staff-brand {
+      display: inline-flex;
+    }
+    .staff-content {
+      padding: 24px 16px;
+    }
+    .staff-topbar {
+      display: block;
+    }
+    .topbar-date {
+      margin-top: 10px;
+    }
+    .staff-topbar h1 {
+      font-size: 26px;
+    }
+    .welcome-row,
+    .page-intro {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+    .kpi-grid {
+      gap: 8px;
+    }
+    .kpi-card {
+      padding: 13px;
+    }
+    .kpi-card strong {
+      font-size: 24px;
+    }
+    .kpi-card small {
+      font-size: 9px;
+    }
+    .consult-grid {
+      grid-template-columns: 1fr;
+    }
+    .info-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .detail-header {
+      display: block;
+    }
+    .detail-header .badge {
+      margin-top: 15px;
+    }
+    .search-form {
+      width: 100%;
+    }
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+    .form-field.wide {
+      grid-column: auto;
+    }
+    
+  }
+    
+</style>
+<style>
+  :root {
+    --ink: #18272a;
+    --muted: #718184;
+    --line: #dce7e4;
+    --paper: #f4f7f6;
+    --teal: #147a72;
+    --mint: #e0f2ec;
+    --gold: #d4a052;
+    --red: #b94749;
+  }
+  body {
+    background: radial-gradient(circle at 88% 4%, rgba(212, 160, 82, .1), transparent 20rem), var(--paper);
+  }
+  .staff-sidebar {
+    background: linear-gradient(165deg, #102d30 0%, #17484a 58%, #123638 100%);
+    box-shadow: 8px 0 30px rgba(17, 48, 49, .12);
+  }
+  .staff-brand { letter-spacing: 2.6px; }
+  .side-link { border-radius: 10px; transition: background .18s ease, transform .18s ease; }
+  .side-link:hover, .side-link.active { background: rgba(95, 190, 169, .18); transform: translateX(3px); }
+  .staff-content { padding-top: 44px; }
+  .staff-topbar h1 { letter-spacing: -.4px; }
+  .button { border-radius: 9px; transition: transform .18s ease, box-shadow .18s ease, background .18s ease; }
+  .button:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(20, 71, 71, .12); }
+  .kpi-card, .data-card { border-radius: 14px; box-shadow: 0 12px 30px rgba(28, 60, 59, .06); }
+  .kpi-card { padding: 20px; }
+  .data-card { overflow: hidden; }
+  input, select, textarea { border-radius: 9px !important; border-color: var(--line) !important; }
+  input:focus, select:focus, textarea:focus { outline: 3px solid rgba(20, 122, 114, .13); border-color: var(--teal) !important; }
+  .badge { border-radius: 999px; }
+  .table-wrap { border: 1px solid var(--line); border-radius: 12px; overflow-x: auto; background: #fff; }
+  table thead { background: #edf5f2; }
+  table th { color: #38625f; font-size: 10px; letter-spacing: .7px; text-transform: uppercase; }
+  table tbody tr { transition: background .16s ease; }
+  table tbody tr:hover { background: #f4faf8; }
+  .detail-grid { gap: 22px; }
+  .detail-main h2, .action-card h2 { color: #173d3d; }
+  .note-box { border-radius: 10px; background: #f0f7f4; border-color: #d4e7e0; }
+  .chat-wrapper { border-radius: 14px; box-shadow: 0 16px 38px rgba(28, 60, 59, .08); }
+  @media (max-width: 760px) {
+    .staff-shell { display: block; }
+    .staff-sidebar { width: 100%; padding: 16px; }
+    .staff-sidebar .eyebrow { margin: 18px 8px 8px; }
+    .staff-content { padding: 26px 16px 48px; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 760px) {
+    .staff-sidebar { box-shadow: none; }
+    .staff-content { padding-top: 28px; }
+  }
+</style>
+<div class="staff-shell">
+  <aside class="staff-sidebar">
+    <div class="staff-brand">
+      <span class="brand-mark">L</span
+      ><span>LUMINA<br /><small>STAFF DESK</small></span>
+    </div>
+    <p class="eyebrow">WORKSPACE</p>
+    <a
+      class="side-link {% if request.resolver_match.url_name == 'staff-home' %} active {% endif %}"
+      href="{% url 'staff-home' %}"
+      ><span>⌂</span> Tổng quan</a
+    >
+    <a
+      class="side-link {% if request.resolver_match.url_name == 'staff-notifications' %}active{% endif %}"
+      href="{% url 'staff-notifications' %}"
+    >
+      <span>♢</span>
+      Thông báo
+      {% if unread_notifications %}
+        <b style="color: #ff0000 !important; font-weight: 700; margin-left: 5px;">
+          ({{ unread_notifications }})
+        </b>
+      {% endif %}
+    </a>
+    <a
+      class="side-link {% if 'booking' in request.resolver_match.url_name %} active {% endif %}"
+      href="{% url 'staff-bookings' %}"
+      ><span>▣</span> Đơn đặt phòng</a
+    >
+    <a
+      class="side-link {% if request.resolver_match.url_name == 'staff-rooms' or request.resolver_match.url_name == 'staff-room-edit' %}active{% endif %}"
+      href="{% url 'staff-rooms' %}"
+      ><span>▤</span> Phòng đã đăng</a
+    >
+    <a
+      class="side-link {% if request.resolver_match.url_name == 'staff-room-map' %}active{% endif %}"
+      href="{% url 'staff-room-map' %}"
+      ><span>▦</span> Sơ đồ phòng</a
+    >
+    <a
+      class="side-link {% if request.resolver_match.url_name == 'staff-room-create' %}active{% endif %}"
+      href="{% url 'staff-room-create' %}"
+      ><span>＋</span> Đăng tạo phòng</a
+    >
+    <a
+      class="side-link {% if 'customer' in request.resolver_match.url_name %} active {% endif %}"
+      href="{% url 'staff-customers' %}"
+      ><span>♙</span> Khách hàng</a
+    >
+    <a
+      class="side-link {% if 'consultation' in request.resolver_match.url_name %} active {% endif %}"
+      href="{% url 'staff-consultations' %}"
+      ><span>◌</span> Khách cần tư vấn</a
+    >
+    <div class="sidebar-bottom">
+      <div class="profile-mini">
+        <span class="avatar">{{ staff_user.full_name|first|upper }}</span
+        ><span><b>{{ staff_user.full_name }}</b><small>Nhân viên</small></span>
+      </div>
+      <a class="logout-link" href="{% url 'staff-logout' %}"
+        >↪ Đăng xuất Staff</a
+      >
+    </div>
+  </aside>
+  <section class="staff-content">
+    <header class="staff-topbar">
+      <div>
+        <p class="eyebrow">LUMINA HOTEL / STAFF</p>
+        <h1>{% block staff_heading %}Trung tâm vận hành{% endblock %}</h1>
+      </div>
+      <div class="topbar-date">
+        {% now "l, d/m/Y" %}<span class="status-dot"></span>
+      </div>
+    </header>
+    {% for message in messages %}
+    <div class="toast">✓ {{ message }}</div>
+    {% endfor %} {% block staff_content %}{% endblock %}
+  </section>
+</div>
+{% endblock %}
